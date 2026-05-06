@@ -15,3 +15,13 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const { orderId, status } = await req.json();
+    await query("UPDATE orders SET status = $1 WHERE id = $2", [status, orderId]);
+    return NextResponse.json({ message: "Cập nhật thành công" });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

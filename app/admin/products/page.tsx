@@ -2,276 +2,258 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Plus, Trash2, Search, X, Loader2, Upload } from "lucide-react";
+import { Plus, Trash2, Search, X, Loader2, Upload, Pencil, Palette, Tag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   
-  // State phục vụ cho việc Upload ảnh
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: "",
     price: "",
-    category: "tshirts",
+    category: "",
     description: "",
     stock: "50",
+    color: "",
+    image_url: ""
   });
 
-  // --- 1. LẤY DỮ LIỆU TỪ DATABASE ---
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     try {
-      const res = await fetch("/api/admin/products");
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setProducts(data);
+      const [prodRes, catRes] = await Promise.all([
+        fetch("/api/admin/products"),
+        fetch("/api/admin/categories")
+      ]);
+      const prods = await prodRes.json();
+      const cats = await catRes.json();
+      if (Array.isArray(prods)) setProducts(prods);
+      if (Array.isArray(cats)) {
+        setCategories(cats);
+        if (cats.length > 0 && !formData.category) {
+          setFormData(prev => ({ ...prev, category: cats[0].name }));
+        }
       }
     } catch (error) {
-      console.error("Lỗi fetch:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
-  // --- 2. XỬ LÝ CHỌN FILE ẢNH ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Tạo link ảnh tạm thời để xem trước
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
-  // --- 3. THÊM SẢN PHẨM MỚI (Dùng FormData để gửi File) ---
+  const handleAddCategory = async () => {
+    if (!newCategoryName) return;
+    try {
+      const res = await fetch("/api/admin/categories", {
+        method: "POST",
+        body: JSON.stringify({ name: newCategoryName }),
+      });
+      if (res.ok) {
+        const added = await res.json();
+        setCategories([...categories, added]);
+        setFormData({ ...formData, category: added.name });
+        setNewCategoryName("");
+      }
+    } catch (e) { alert("Lỗi thêm danh mục"); }
+  };
+
+  const handleEdit = (product: any) => {
+    setEditingId(product.id);
+    setFormData({
+      name: product.name,
+      price: product.price.toString(),
+      category: product.category,
+      description: product.description || "",
+      stock: product.stock.toString(),
+      color: product.color || "",
+      image_url: product.image_url
+    });
+    setPreviewUrl(product.image_url);
+    setShowModal(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     const data = new FormData();
+    if (editingId) data.append("id", editingId);
     data.append("name", formData.name);
     data.append("price", formData.price);
     data.append("category", formData.category);
     data.append("description", formData.description);
     data.append("stock", formData.stock);
-    
-    if (selectedFile) {
-      data.append("image", selectedFile); // Đính kèm file ảnh
-    }
+    data.append("color", formData.color);
+    data.append("currentImage", formData.image_url);
+    if (selectedFile) data.append("image", selectedFile);
 
     try {
-      const res = await fetch("/api/admin/products", {
-        method: "POST",
-        body: data, // Gửi FormData lên Backend
-      });
-
+      const method = editingId ? "PUT" : "POST";
+      const res = await fetch("/api/admin/products", { method, body: data });
       if (res.ok) {
-        fetchProducts(); // Load lại danh sách sản phẩm
+        await fetchData();
         handleCloseModal();
-      } else {
-        alert("Có lỗi xảy ra khi thêm sản phẩm.");
       }
-    } catch (error) {
-      console.error("Lỗi submit:", error);
-      alert("Lỗi kết nối API.");
-    }
+    } catch (e) { alert("Lỗi lưu sản phẩm"); }
   };
 
-  // --- 4. XÓA SẢN PHẨM ---
   const handleDelete = async (id: number) => {
-    if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
-      try {
-        const res = await fetch(`/api/admin/products?id=${id}`, { method: "DELETE" });
-        if (res.ok) {
-          setProducts(products.filter((p) => p.id !== id));
-        }
-      } catch (error) {
-        alert("Lỗi khi xóa");
-      }
+    if (confirm("Xóa sản phẩm này?")) {
+      await fetch(`/api/admin/products?id=${id}`, { method: "DELETE" });
+      setProducts(products.filter(p => p.id !== id));
     }
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setFormData({ name: "", price: "", category: "tshirts", description: "", stock: "50" });
+    setEditingId(null);
+    setFormData({ name: "", price: "", category: categories[0]?.name || "", description: "", stock: "50", color: "", image_url: "" });
     setSelectedFile(null);
     setPreviewUrl(null);
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center p-20 text-white italic">
-        <Loader2 className="animate-spin mr-2" /> Loading inventory...
-      </div>
-    );
-  }
+  if (loading) return <div className="p-20 text-center text-white italic animate-pulse">Loading Database...</div>;
 
   return (
     <div className="space-y-8 p-2">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">Inventory.</h1>
-          <p className="text-zinc-500 text-sm font-medium mt-1">Quản lý kho sản phẩm từ PostgreSQL</p>
-        </div>
-        <Button 
-          onClick={() => setShowModal(true)} 
-          className="bg-red-600 text-white hover:bg-red-700 uppercase font-bold italic rounded-none px-6"
-        >
-          <Plus className="h-4 w-4 mr-2" /> Add Product
-        </Button>
+      <div className="flex justify-between items-center">
+        <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">Inventory.</h1>
+        <Button onClick={() => setShowModal(true)} className="bg-red-600 rounded-none font-bold uppercase italic px-8">Add Product</Button>
       </div>
 
-      {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Tìm sản phẩm..."
-          className="w-full pl-10 pr-4 py-2 bg-[#0a0a0a] border border-zinc-800 rounded-none text-white text-sm placeholder:text-zinc-700 focus:outline-none focus:border-zinc-600"
-        />
+        <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search items..." className="w-full pl-10 pr-4 py-2 bg-[#0a0a0a] border border-zinc-800 rounded-none text-white text-sm focus:border-red-600 outline-none" />
       </div>
 
-      {/* Products Table */}
-      <Card className="bg-[#0a0a0a] border-zinc-800 shadow-none rounded-none">
-        <CardHeader>
-          <CardTitle className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-            All Products ({filteredProducts.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-zinc-900 text-left">
-                  <th className="py-3 px-4 text-xs font-bold uppercase tracking-wider text-zinc-600">Sản phẩm</th>
-                  <th className="py-3 px-4 text-xs font-bold uppercase tracking-wider text-zinc-600">Danh mục</th>
-                  <th className="py-3 px-4 text-xs font-bold uppercase tracking-wider text-zinc-600">Giá</th>
-                  <th className="py-3 px-4 text-xs font-bold uppercase tracking-wider text-zinc-600">Kho</th>
-                  <th className="text-right py-3 px-4 text-xs font-bold uppercase tracking-wider text-zinc-600">Hành động</th>
+      <Card className="bg-[#0a0a0a] border-zinc-800 rounded-none shadow-none">
+        <CardContent className="p-0 overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-zinc-900 text-[10px] font-black uppercase text-zinc-600">
+                <th className="p-4">Item</th>
+                <th className="p-4">Category</th>
+                <th className="p-4">Color</th>
+                <th className="p-4">Price</th>
+                <th className="p-4">Stock</th>
+                <th className="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProducts.map(p => (
+                <tr key={p.id} className="border-b border-zinc-900 hover:bg-zinc-950 transition-colors">
+                  <td className="p-4 flex items-center gap-4">
+                    <div className="relative h-12 w-12 bg-zinc-900 border border-zinc-800 overflow-hidden flex-shrink-0">
+                      <Image src={p.image_url} alt={p.name} fill className="object-cover" />
+                    </div>
+                    <span className="text-sm font-bold text-white uppercase">{p.name}</span>
+                  </td>
+                  <td className="p-4 text-xs uppercase text-zinc-500 font-medium">{p.category}</td>
+                  <td className="p-4 text-xs uppercase text-zinc-400 italic">{p.color || "-"}</td>
+                  <td className="p-4 text-sm font-black text-red-500">${parseFloat(p.price).toFixed(2)}</td>
+                  <td className="p-4 text-xs font-mono text-zinc-400">{p.stock}</td>
+                  <td className="p-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(p)} className="text-zinc-600 hover:text-white"><Pencil className="h-4 w-4"/></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="text-zinc-600 hover:text-red-600"><Trash2 className="h-4 w-4"/></Button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b border-zinc-900 last:border-0 hover:bg-zinc-950 transition-colors">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="relative h-14 w-14 bg-zinc-900 border border-zinc-800 overflow-hidden">
-                          <Image 
-                            src={product.image_url || "/products/tee-1.jpg"} 
-                            alt={product.name} 
-                            fill 
-                            className="object-cover hover:scale-110 transition-transform duration-300" 
-                          />
-                        </div>
-                        <span className="text-sm font-bold text-white uppercase">{product.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="text-xs uppercase font-medium text-zinc-500">{product.category}</span>
-                    </td>
-                    <td className="py-4 px-4 text-sm font-black text-red-500">
-                      ${parseFloat(product.price).toFixed(2)}
-                    </td>
-                    <td className="py-4 px-4 text-sm font-mono text-zinc-400">
-                      {product.stock}
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleDelete(product.id)} 
-                        className="text-zinc-600 hover:text-red-600 hover:bg-transparent"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filteredProducts.length === 0 && (
-              <p className="text-center p-10 text-zinc-700 text-sm italic">No products found in database.</p>
-            )}
-          </div>
+              ))}
+            </tbody>
+          </table>
         </CardContent>
       </Card>
 
-      {/* Add Product Modal (Hỗ trợ Đính kèm tệp) */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-          <div className="bg-[#0a0a0a] border border-zinc-800 rounded-none p-8 w-full max-w-md shadow-2xl">
+          <div className="bg-[#0a0a0a] border border-zinc-800 rounded-none p-8 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto text-white">
             <div className="flex justify-between mb-8">
-              <h2 className="text-xl font-bold uppercase italic text-white tracking-tighter">Attach Product.</h2>
+              <h2 className="text-xl font-black uppercase italic tracking-tighter">{editingId ? 'Update Item.' : 'New Product.'}</h2>
               <X className="cursor-pointer text-zinc-500 hover:text-white" onClick={handleCloseModal} />
             </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Ô TẢI ẢNH (ATTACHMENT) */}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wider">Product Image</label>
+                <label className="text-[10px] font-black uppercase text-zinc-500">Image Attachment</label>
                 <div className="flex items-center gap-4">
-                   <div className="h-20 w-20 border border-zinc-800 flex items-center justify-center overflow-hidden bg-zinc-900 relative">
-                      {previewUrl ? (
-                        <img src={previewUrl} className="object-cover h-full w-full" alt="Preview" />
-                      ) : (
-                        <Upload className="text-zinc-700 h-5 w-5" />
-                      )}
-                   </div>
-                   <div className="flex-1">
-                     <input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="text-xs text-zinc-500 file:mr-4 file:py-1.5 file:px-3 file:border file:border-zinc-700 file:bg-transparent file:text-white file:text-xs file:font-bold file:uppercase file:cursor-pointer hover:file:bg-zinc-800 file:transition-colors"
-                     />
-                     <p className="text-[9px] text-zinc-600 mt-2 italic">* Upload square images for best results.</p>
-                   </div>
+                  <div className="h-24 w-24 bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden">
+                    {previewUrl ? <img src={previewUrl} className="h-full w-full object-cover" alt="Preview" /> : <Upload className="h-6 w-6 text-zinc-700"/>}
+                  </div>
+                  <div className="flex-1">
+                    <input type="file" onChange={handleFileChange} className="text-[10px] font-mono text-zinc-500" />
+                    <p className="text-[8px] text-zinc-600 mt-2 uppercase italic">* RAW IMAGE FORMAT PREFERRED</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wider">Product Name</label>
-                <input className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-none text-white text-sm focus:border-zinc-600 outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wider">Price ($)</label>
-                  <input type="number" step="0.01" className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-none text-white text-sm focus:border-zinc-600 outline-none" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required />
+              <div className="space-y-4">
+                <div className="space-y-1">
+                   <label className="text-[10px] font-black uppercase text-zinc-500">Name</label>
+                   <input className="w-full bg-zinc-950 border border-zinc-800 p-3 text-sm focus:border-red-600 outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wider">Stock</label>
-                  <input type="number" className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-none text-white text-sm focus:border-zinc-600 outline-none" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-zinc-500">Price ($)</label>
+                    <input type="number" step="0.01" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-sm focus:border-red-600 outline-none" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-zinc-500">Stock</label>
+                    <input type="number" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-sm focus:border-red-600 outline-none" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                   <label className="text-[10px] font-black uppercase text-zinc-500 flex items-center gap-2">
+                     <Palette className="h-3 w-3" /> Product Color
+                   </label>
+                   <input placeholder="e.g. Matte Black, Red, Neon..." className="w-full bg-zinc-950 border border-zinc-800 p-3 text-sm focus:border-red-600 outline-none" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} />
+                </div>
+
+                <div className="space-y-2 pt-4 border-t border-zinc-900">
+                  <label className="text-[10px] font-black uppercase text-zinc-500 flex items-center gap-2">
+                    <Tag className="h-3 w-3" /> Category Management
+                  </label>
+                  <select className="w-full bg-zinc-950 border border-zinc-800 p-3 text-sm uppercase font-bold outline-none focus:border-red-600" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                  <div className="flex gap-2 pt-2">
+                    <input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="New tag..." className="flex-1 bg-zinc-900 border border-zinc-800 p-2 text-xs outline-none focus:border-zinc-600" />
+                    <Button type="button" onClick={handleAddCategory} size="sm" className="bg-zinc-800 hover:bg-zinc-700 text-[10px] font-black uppercase">Add Tag</Button>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                   <label className="text-[10px] font-black uppercase text-zinc-500">Description</label>
+                   <textarea className="w-full bg-zinc-950 border border-zinc-800 p-3 text-sm h-24 focus:border-red-600 outline-none resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wider">Category</label>
-                <select className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-none text-white text-sm focus:border-zinc-600 outline-none appearance-none" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                  <option value="tshirts">T-Shirts</option>
-                  <option value="hoodies">Hoodies</option>
-                  <option value="pants">Pants</option>
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button type="button" variant="outline" className="flex-1 border-zinc-800 text-white rounded-none uppercase font-bold text-xs hover:bg-zinc-900" onClick={handleCloseModal}>Cancel</Button>
-                <Button type="submit" className="flex-1 bg-red-600 text-white rounded-none uppercase font-bold text-xs hover:bg-red-700">Upload & Save</Button>
+              <div className="flex gap-4 pt-4">
+                <Button type="button" variant="outline" className="flex-1 border-zinc-800 rounded-none uppercase italic font-black text-xs hover:bg-zinc-900" onClick={handleCloseModal}>Cancel</Button>
+                <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-none uppercase italic font-black text-xs">Save Drop</Button>
               </div>
             </form>
           </div>
