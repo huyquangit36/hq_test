@@ -64,38 +64,45 @@ export default function CheckoutPage() {
   const total = subtotal + shipping;
 
   // THUẬT TOÁN QUAN TRỌNG NHẤT: Gửi dữ liệu về PostgreSQL khi bấm nút
-  const handlePlaceOrder = async () => {
-    if (!address) {
-      alert("Vui lòng nhập địa chỉ giao hàng!");
-      return;
-    }
+const handlePlaceOrder = async () => {
+  if (!address) {
+    alert("Vui lòng nhập địa chỉ giao hàng!");
+    return;
+  }
 
-    setIsSubmitting(true);
-    try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: user.id,
-          total_amount: total,
-          shipping_address: address
-        }),
-      });
+  setIsSubmitting(true);
+  try {
+    const response = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: user.id,
+        total_amount: total,
+        shipping_address: address,
+        // THÊM DÒNG NÀY: Gửi danh sách sản phẩm thực tế đi
+        items: cartItems.map(item => ({
+          product_id: item.id, // Đảm bảo item có field id (product_id)
+          quantity: item.quantity || 1,
+          price: parseFloat(item.price)
+        }))
+      }),
+    });
 
-      if (response.ok) {
-        localStorage.removeItem("cart");
-        window.dispatchEvent(new Event("cart-updated"));
-        alert("ĐẶT HÀNG THÀNH CÔNG!");
-        router.push("/orders/history");
-      } else {
-        alert("Lỗi khi xử lý đơn hàng.");
-      }
-    } catch (error) {
-      alert("Lỗi kết nối máy chủ.");
-    } finally {
-      setIsSubmitting(false);
+    if (response.ok) {
+      localStorage.removeItem("cart");
+      window.dispatchEvent(new Event("cart-updated"));
+      alert("ĐẶT HÀNG THÀNH CÔNG!");
+      router.push("/orders/history");
+    } else {
+      const errorData = await response.json();
+      alert(`Lỗi: ${errorData.error || "Không thể xử lý đơn hàng"}`);
     }
-  };
+  } catch (error) {
+    alert("Lỗi kết nối máy chủ.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-red-600" /></div>;
 

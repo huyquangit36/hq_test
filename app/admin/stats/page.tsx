@@ -1,9 +1,7 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { ShoppingCart, Users, DollarSign, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 export default function AdvancedStatsPage() {
   const [data, setData] = useState<any>(null);
@@ -30,15 +28,15 @@ export default function AdvancedStatsPage() {
           items={(data.categoryDist || []).map((c: any) => ({ label: c.category, val: parseFloat(c.revenue_share || 0) }))}
           total={data.revenue}
           icon={<DollarSign className="h-3 w-3"/>}
-          change={data.revenueGrowth} // TĂNG TRƯỞNG THẬT
+          change={data.revenueGrowth} 
         />
         <DonutStatCard 
-          title="Total Orders" 
+          title="Orders Completed" 
           value={data.orders} 
           items={(data.categoryDist || []).map((c: any) => ({ label: c.category, val: parseInt(c.count || 0) }))}
           total={data.orders}
           icon={<ShoppingCart className="h-3 w-3"/>}
-          change={data.ordersGrowth} // TĂNG TRƯỞNG THẬT
+          change="order" 
         />
         <DonutStatCard 
           title="Active Customers" 
@@ -46,7 +44,7 @@ export default function AdvancedStatsPage() {
           items={[{ label: 'Users', val: data.customers }]}
           total={data.customers}
           icon={<Users className="h-3 w-3"/>}
-          change={data.customersGrowth} // TĂNG TRƯỞNG THẬT
+          change="Total Base"
         />
         <DonutStatCard 
           title="Avg. Order Value" 
@@ -59,43 +57,38 @@ export default function AdvancedStatsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Progress Bar cho Status - Dùng totalOrdersAll để tính % */}
         <Card className="bg-[#0a0a0a] border-zinc-800 text-white shadow-none">
-          <CardHeader><CardTitle className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Order Status Distribution</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Order Pipeline Status</CardTitle></CardHeader>
           <CardContent className="space-y-6">
-            <ProgressBar label="Pending" value={(data.statusDist || []).find((s:any)=>s.status==='Pending')?.count || 0} total={data.orders} color="bg-yellow-500" />
-            <ProgressBar label="Shipping" value={(data.statusDist || []).find((s:any)=>s.status==='Shipping')?.count || 0} total={data.orders} color="bg-blue-500" />
-            <ProgressBar label="Completed" value={(data.statusDist || []).find((s:any)=>s.status==='Completed')?.count || 0} total={data.orders} color="bg-green-500" />
+            <ProgressBar label="Pending" value={(data.statusDist || []).find((s:any)=>s.status==='Pending')?.count || 0} total={data.totalOrdersAll} color="bg-yellow-500" />
+            <ProgressBar label="Shipping" value={(data.statusDist || []).find((s:any)=>s.status==='Shipping')?.count || 0} total={data.totalOrdersAll} color="bg-blue-500" />
+            <ProgressBar label="Completed" value={(data.statusDist || []).find((s:any)=>s.status==='Completed')?.count || 0} total={data.totalOrdersAll} color="bg-green-500" />
           </CardContent>
         </Card>
 
-<Card className="bg-[#0a0a0a] border-zinc-800 text-white shadow-none">
-  <CardHeader>
-    <CardTitle className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">
-      Sales Distribution by Category
-    </CardTitle>
-  </CardHeader>
-  <CardContent className="space-y-6">
-     {['tshirts', 'hoodies', 'pants', 'accessories'].map(cat => {
-        // Tìm danh mục trong mảng data.categoryDist trả về từ API
-        const item = (data.categoryDist || []).find((c: any) => c.category.toLowerCase() === cat);
-        
-        // Giá trị bán được (count) từ API, nếu không có thì mặc định là 0
-        const soldCount = item ? parseInt(item.count) : 0;
-        
-        return (
-          <ProgressBar 
-            key={cat} 
-            label={cat} 
-            value={soldCount} 
-            total={data.orders || 1} 
-            color={cat === 'tshirts' ? "bg-white" : "bg-red-600"} 
-          />
-        );
-     })}
-  </CardContent>
-</Card>
+        {/* Progress Bar cho Category - Chỉ hiện khi đã có đơn Completed */}
+        <Card className="bg-[#0a0a0a] border-zinc-800 text-white shadow-none">
+          <CardHeader>
+            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Sales by Category</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+             {(data.categoryDist || []).length > 0 ? data.categoryDist.map((item: any) => (
+                <ProgressBar 
+                    key={item.category} 
+                    label={item.category} 
+                    value={item.count} 
+                    total={data.orders} // Chia cho tổng số đơn đã hoàn thành
+                    color={item.category.toLowerCase().includes('tshirt') ? "bg-white" : "bg-red-600"} 
+                />
+             )) : (
+                <div className="text-zinc-700 text-[10px] font-bold uppercase py-10 text-center">No Completed Sales Data Yet</div>
+             )}
+          </CardContent>
+        </Card>
       </div>
 
+      {/* Top Customers Table - Giữ nguyên Layout */}
       <Card className="bg-[#0a0a0a] border-zinc-800 text-white shadow-none">
         <CardHeader className="border-b border-zinc-900 mb-4">
           <CardTitle className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Top Customers by Spending</CardTitle>
@@ -111,7 +104,7 @@ export default function AdvancedStatsPage() {
               </tr>
             </thead>
             <tbody>
-              {(data.topCustomers || []).map((c: any, index: number) => (
+              {data.topCustomers.map((c: any, index: number) => (
                 <tr key={index} className="border-b border-zinc-900 last:border-0 hover:bg-zinc-950 transition-colors">
                   <td className="p-4 font-black italic text-red-600">0{index + 1}</td>
                   <td className="p-4">
@@ -130,21 +123,43 @@ export default function AdvancedStatsPage() {
   );
 }
 
+// DonutStatCard giữ nguyên logic hover và vẽ SVG của bạn nhưng thêm check Number
+// 1. Sửa hàm ProgressBar để hiển thị % bên cạnh số
+function ProgressBar({ label, value, total, color }: any) {
+  const val = Number(value) || 0;
+  const tot = Number(total) || 1;
+  const percentage = Math.round((val / tot) * 100);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between text-[10px] font-black uppercase italic tracking-widest">
+        <span className="text-zinc-400">{label} <span className="ml-2 text-zinc-600">({percentage}%)</span></span>
+        <span className="text-white">{val}</span>
+      </div>
+      <div className="h-[2px] w-full bg-zinc-900 overflow-hidden">
+        <div className={`h-full ${color} transition-all duration-1000`} style={{ width: `${percentage}%` }}></div>
+      </div>
+    </div>
+  );
+}
+
+// 2. Sửa hàm DonutStatCard để hiển thị % khi hover
 function DonutStatCard({ title, value, items, icon, change }: any) {
   const [hoveredItem, setHoveredItem] = useState<any>(null);
 
-  // BƯỚC QUAN TRỌNG: Lọc bỏ những danh mục có giá trị (val) = 0
-  // Nếu chưa bán được Hoodie nào, val sẽ là 0 và nó bị loại bỏ khỏi biểu đồ
-  const activeItems = (items || []).filter((item: any) => item.val > 0);
+  // Ép kiểu số để tính toán
+  const activeItems = (items || [])
+    .map((i: any) => ({ ...i, val: Number(i.val) }))
+    .filter((item: any) => item.val > 0);
 
-  // Tính lại tổng dựa trên các mục thực tế có tiền
   const actualTotal = activeItems.reduce((acc: number, curr: any) => acc + curr.val, 0);
 
-  const categoryColors: { [key: string]: string } = {
-    "tshirts": "#ffffff",
-    "hoodies": "#dc2626",
-    "pants": "#3f3f46",
-    "accessories": "#71717a"
+  const getCategoryColor = (cat: string) => {
+    const c = cat.toLowerCase();
+    if (c.includes('tshirt')) return "#ffffff";
+    if (c.includes('hoodie')) return "#dc2626";
+    if (c.includes('pants')) return "#3f3f46";
+    return "#dc2626"; 
   };
 
   let currentOffset = 0;
@@ -157,12 +172,12 @@ function DonutStatCard({ title, value, items, icon, change }: any) {
            <div className="text-red-600">{icon}</div>
         </div>
 
-        <div className="relative h-32 w-32 group flex items-center justify-center">
+        <div className="relative h-32 w-32 flex items-center justify-center">
           <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 overflow-visible">
+            {/* Vòng tròn nền tối */}
             <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#111111" strokeWidth="3" />
             
-            {/* CHỈ VẼ KHI CÓ DỮ LIỆU THẬT SỰ BÁN ĐƯỢC */}
-            {activeItems.length > 0 ? activeItems.map((item: any) => {
+            {activeItems.map((item: any) => {
               const percentage = (item.val / actualTotal) * 100;
               const strokeDasharray = `${percentage} ${100 - percentage}`;
               const strokeOffset = -currentOffset;
@@ -172,57 +187,54 @@ function DonutStatCard({ title, value, items, icon, change }: any) {
 
               return (
                 <circle 
-                  key={item.label} cx="21" cy="21" r="15.9" fill="transparent" 
-                  stroke={categoryColors[item.label.toLowerCase()] || "#444"} 
+                  key={item.label} 
+                  cx="21" cy="21" r="15.9" 
+                  fill="transparent" 
+                  stroke={getCategoryColor(item.label)} 
+                  // Khi hover thì làm dày đường stroke lên
                   strokeWidth={isHovered ? "6" : "3"} 
                   strokeDasharray={strokeDasharray} 
                   strokeDashoffset={strokeOffset} 
                   className="transition-all duration-300 cursor-pointer"
-                  style={{ pointerEvents: 'stroke' }}
-                  onMouseEnter={() => setHoveredItem(item)}
+                  
+                  style={{ pointerEvents: 'stroke' }} 
+                  
+                  onMouseEnter={() => setHoveredItem({
+                    ...item,
+                    percent: Math.round(percentage)
+                  })}
                   onMouseLeave={() => setHoveredItem(null)}
                 />
               );
-            }) : (
-              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="#1f1f1f" strokeWidth="1" strokeDasharray="2,2" />
-            )}
+            })}
           </svg>
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          {/* Text hiển thị ở giữa */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
             <span className="text-lg font-black italic tracking-tighter text-white">
-                {hoveredItem ? (title.toLowerCase().includes('revenue') ? `$${hoveredItem.val}` : hoveredItem.val) : value}
+                {hoveredItem ? (title.toLowerCase().includes('revenue') ? `$${hoveredItem.val.toFixed(2)}` : hoveredItem.val) : value}
             </span>
-            <span className="text-[8px] font-black text-zinc-500 uppercase">
-                {hoveredItem ? hoveredItem.label : (actualTotal > 0 ? change : "NO DATA")}
+            <span className="text-[9px] font-black text-red-600 uppercase">
+                {hoveredItem ? `${hoveredItem.percent}%` : (actualTotal > 0 ? change : "NO DATA")}
             </span>
+            {hoveredItem && (
+              <span className="text-[7px] text-zinc-500 uppercase font-black tracking-widest mt-1">
+                {hoveredItem.label}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* CHÚ THÍCH CŨNG CHỈ HIỆN NHỮNG THẰNG ĐÃ BÁN ĐƯỢC */}
+        {/* Chú thích (Legend) */}
         <div className="flex flex-wrap justify-center gap-4">
              {activeItems.map((item: any) => (
-                <div key={item.label} className="flex items-center gap-1.5 opacity-70 hover:opacity-100 transition-opacity">
-                  <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: categoryColors[item.label.toLowerCase()] || "#444" }}></div>
-                  <span className="text-[8px] font-black uppercase italic">{item.label}</span>
+                <div key={item.label} className="flex items-center gap-1.5 opacity-80 hover:opacity-100 transition-opacity">
+                  <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getCategoryColor(item.label) }}></div>
+                  <span className="text-[8px] font-black uppercase italic text-zinc-500">{item.label}</span>
                 </div>
              ))}
         </div>
       </div>
     </Card>
-  );
-}
-
-function ProgressBar({ label, value, total, color }: any) {
-  const percentage = Math.min((value / (total || 1)) * 100, 100);
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between text-[10px] font-black uppercase italic tracking-widest">
-        <span className="text-zinc-400">{label}</span>
-        <span className="text-white">{value}</span>
-      </div>
-      <div className="h-[2px] w-full bg-zinc-900 overflow-hidden">
-        <div className={`h-full ${color} transition-all duration-1000`} style={{ width: `${percentage}%` }}></div>
-      </div>
-    </div>
   );
 }
