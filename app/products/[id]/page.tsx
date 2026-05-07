@@ -123,7 +123,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        <div className="mt-32 border-t border-zinc-900 pt-20">
+        <div className="mt-16 md:mt-32 border-t border-zinc-900 pt-20">
           <div className="flex justify-between items-end mb-16">
             <div>
               <h2 className="text-4xl font-black uppercase italic tracking-tighter">Community Feedback<span className="text-red-600">.</span></h2>
@@ -170,13 +170,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           )}
         </div>
 
-        <div className="mt-32 border-t border-zinc-900 pt-20">
+        <div className="mt-16 md:mt-32 border-t border-zinc-900 pt-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
             <div className="lg:col-span-4 space-y-8">
                <h2 className="text-4xl font-black uppercase italic tracking-tighter">Inquiry Hub<span className="text-red-600">.</span></h2>
                <p className="text-zinc-500 text-xs font-bold uppercase italic tracking-widest leading-relaxed">Have a question about fit or material? Ask the pack directly.</p>
                
-               <form onSubmit={handlePostQuestion} className="space-y-4 bg-zinc-950 p-6 border border-zinc-900">
+               <form onSubmit={handlePostQuestion} className="space-y-4 bg-zinc-950 p-2 md:p-6 border border-zinc-900">
                   <textarea value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} placeholder="WHAT'S ON YOUR MIND?" className="w-full bg-black border border-zinc-800 p-4 text-xs font-bold text-white italic outline-none focus:border-red-600 h-32 resize-none" required />
                   <Button disabled={isPosting} type="submit" className="w-full bg-red-600 text-white rounded-none font-black uppercase italic py-6 hover:bg-red-700 transition-all">
                     {isPosting ? <Loader2 className="animate-spin h-4 w-4" /> : "Post Inquiry"}

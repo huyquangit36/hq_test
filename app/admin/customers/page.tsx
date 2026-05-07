@@ -30,7 +30,7 @@ export default function AdminCustomersPage() {
 
   return (
     <div className="space-y-8 p-2 text-white">
-      <h1 className="text-4xl font-black italic uppercase tracking-tighter">Database.</h1>
+      <h1 className="text-4xl font-black italic uppercase tracking-tighter">Member.</h1>
 
       <div className="flex flex-wrap gap-4 bg-zinc-950 p-4 border border-zinc-900">
         <div className="relative flex-1 min-w-[200px]">

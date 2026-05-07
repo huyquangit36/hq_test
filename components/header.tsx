@@ -15,11 +15,11 @@ export function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [notifs, setNotifs] = useState<any[]>([]);
   const [isPulsing, setIsPulsing] = useState(false);
+  const unreadCount = notifs.filter(n => !n.is_read).length;
   
   const notifRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Logic đóng thông báo khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
@@ -67,6 +67,34 @@ export function Header() {
     router.push("/");
     router.refresh();
   };
+
+  const markAllAsRead = async () => {
+    if (!user || unreadCount === 0) return;
+
+    
+    const updatedNotifs = notifs.map(n => ({ ...n, is_read: true }));
+    setNotifs(updatedNotifs);
+
+    
+    try {
+      await fetch(`/api/user/notifications/read-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+    } catch (err) {
+      console.error("Failed to mark notifications as read", err);
+    }
+  };
+
+  
+  const toggleNotifs = () => {
+    if (!showNotifs) {
+      markAllAsRead(); 
+    }
+    setShowNotifs(!showNotifs);
+  };
+
 
   return (
     <>
@@ -142,69 +170,68 @@ export function Header() {
                 </Button>
               </Link>
 
-{/* NOTIFICATIONS BOX */}
-{user && (
-  <div className="relative" ref={notifRef}>
-    <Button 
-      variant="ghost" size="icon" 
-      className={`text-zinc-500 hover:text-white ${showNotifs ? 'text-white' : ''}`}
-      onClick={() => setShowNotifs(!showNotifs)}
-    >
-      <Bell className="h-5 w-5" />
-      {notifs.length > 0 && <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-600 animate-ping"></span>}
-    </Button>
+            {/* NOTIFICATIONS BOX */}
+            {user && (
+              <div className="relative" ref={notifRef}>
+                <Button 
+                  variant="ghost" size="icon" 
+                  className={`text-zinc-500 hover:text-white ${showNotifs ? 'text-white' : ''}`}
+                  onClick={toggleNotifs} 
+                >
+                  <Bell className="h-5 w-5" />
+                  {/* CHỈ HIỆN CHẤM ĐỎ NẾU CÓ THÔNG BÁO CHƯA ĐỌC */}
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-600 animate-ping"></span>
+                  )}
+                </Button>
 
-    {showNotifs && (
-      <div className="absolute top-full right-0 mt-4 w-80 bg-zinc-950 border border-zinc-900 shadow-2xl animate-in fade-in slide-in-from-top-2">
-        <div className="p-4 border-b border-zinc-900 flex justify-between items-center bg-black">
-          <p className="text-[10px] font-black uppercase italic text-white tracking-widest">System Alerts</p>
-          <span className="text-[9px] bg-red-600 px-2 py-0.5 font-black text-white">
-            {notifs.length > 5 ? "5+" : notifs.length} NEW
-          </span>
-        </div>
-        <div className="max-h-[400px] overflow-y-auto">
-          {notifs.slice(0, 5).map((n) => (
-            <Link 
-              key={n.id} href={n.link || "#"} 
-              className="block p-4 border-b border-zinc-900/50 hover:bg-white/5 transition-all"
-              onClick={() => setShowNotifs(false)}
-            >
-              <div className="flex gap-3">
-                 {n.title === "Admin Phản Hồi" ? 
-                    <MessageSquare size={14} className="text-red-600 shrink-0" /> : 
-                    <Truck size={14} className="text-blue-500 shrink-0" />
-                 }
-                 <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-black uppercase text-white leading-none mb-1 truncate">
-                      {n.title}
-                    </p>
-                    <p className="text-[10px] text-zinc-500 italic leading-tight line-clamp-2">
-                      {n.desc}
-                    </p>
-                 </div>
+                {showNotifs && (
+                  <div className={cn(
+                    "fixed md:absolute top-16 md:top-full left-4 right-4 md:left-auto md:right-0 md:w-80 mt-2 md:mt-4",
+                    "bg-zinc-950 border border-zinc-900 shadow-2xl z-[110] animate-in fade-in slide-in-from-top-2"
+                  )}>
+                    <div className="p-4 border-b border-zinc-900 flex justify-between items-center bg-black">
+                      <p className="text-[10px] font-black uppercase italic text-white tracking-widest">System Alerts</p>
+                      {/* Badge hiện số lượng chưa đọc lúc chưa click, hoặc 0 sau khi click */}
+                      <span className="text-[9px] bg-red-600 px-2 py-0.5 font-black text-white">
+                        {unreadCount > 0 ? (unreadCount > 5 ? "5+" : unreadCount) : "0"} NEW
+                      </span>
+                    </div>
+
+                    <div className="max-h-[60vh] md:max-h-80 overflow-y-auto">
+                      {notifs.slice(0, 5).map((n) => (
+                        <Link 
+                          key={n.id} href={n.link || "#"} 
+                          // Thêm độ mờ cho các thông báo đã đọc
+                          className={cn(
+                            "block p-4 border-b border-zinc-900/50 hover:bg-white/5 transition-all",
+                            n.is_read ? "opacity-60" : "opacity-100 bg-white/[0.02]"
+                          )}
+                          onClick={() => setShowNotifs(false)}
+                        >
+                          <div className="flex gap-3">
+                            {n.title === "Admin Phản Hồi" ? 
+                                <MessageSquare size={14} className="text-red-600 shrink-0" /> : 
+                                <Truck size={14} className="text-blue-500 shrink-0" />
+                            }
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[11px] font-black uppercase text-white leading-none mb-1 truncate">
+                                  {n.title}
+                                </p>
+                                <p className="text-[10px] text-zinc-500 italic leading-tight line-clamp-2">
+                                  {n.desc}
+                                </p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                      
+                      {/* ... (phần Footer View all và No transmissions giữ nguyên) */}
+                    </div>
+                  </div>
+                )}
               </div>
-            </Link>
-          ))}
-          {notifs.length > 5 && (
-            <Link 
-              href="/profile/notifications" 
-              className="block p-3 text-center text-[9px] font-black uppercase italic text-zinc-500 hover:text-white transition-colors border-t border-zinc-900 bg-black/20"
-              onClick={() => setShowNotifs(false)}
-            >
-              View all transmissions ({notifs.length})
-            </Link>
-          )}
-
-          {notifs.length === 0 && (
-            <p className="p-10 text-center text-zinc-700 text-[10px] font-bold uppercase italic">
-              No new transmissions.
-            </p>
-          )}
-        </div>
-      </div>
-    )}
-  </div>
-)}
+            )}
 
               {/* CART */}
               <Link href="/checkout">

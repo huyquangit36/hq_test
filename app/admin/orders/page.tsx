@@ -61,7 +61,7 @@ export default function AdminOrdersPage() {
   );
 
   return (
-    <div className="p-8 space-y-6 bg-black min-h-screen text-white font-sans">
+    <div className="p-2 space-y-6 bg-black min-h-screen text-white font-sans">
       <h1 className="text-4xl font-black uppercase italic tracking-tighter">Order Hub.</h1>
 
       {/* THANH BỘ LỌC */}
