@@ -13,6 +13,7 @@ export async function GET() {
   }
 }
 
+// 1. PHẦN THÊM MỚI SẢN PHẨM (POST)
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -20,9 +21,12 @@ export async function POST(req: Request) {
     const price = formData.get("price") as string;
     const category = formData.get("category") as string;
     const description = formData.get("description") as string;
-    const stock = formData.get("stock") as string;
-    const color = formData.get("color") as string; // Thêm màu sắc
+    const color = formData.get("color") as string;
     const file = formData.get("image") as File;
+    
+    // NHẬN DỮ LIỆU SIZE DƯỚI DẠNG CHUỖI JSON
+    // Ví dụ: "{"S": 10, "M": 20, "L": 0, "XL": 5}"
+    const size_stocks = formData.get("size_stocks") as string; 
 
     let imageUrl = "/products/tee-1.jpg";
 
@@ -35,9 +39,10 @@ export async function POST(req: Request) {
       imageUrl = `/uploads/${filename}`;
     }
 
+    // LƯU VÀO DATABASE
     const result = await query(
-      "INSERT INTO products (name, price, category, description, image_url, stock, color) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
-      [name, parseFloat(price), category, description, imageUrl, parseInt(stock), color]
+      "INSERT INTO products (name, price, category, description, image_url, size_stocks, color) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [name, parseFloat(price), category, description, imageUrl, size_stocks, color]
     );
     return NextResponse.json(result.rows[0], { status: 201 });
   } catch (error: any) {
@@ -45,6 +50,7 @@ export async function POST(req: Request) {
   }
 }
 
+// 2. PHẦN CẬP NHẬT SẢN PHẨM (PUT)
 export async function PUT(req: Request) {
   try {
     const formData = await req.formData();
@@ -53,10 +59,12 @@ export async function PUT(req: Request) {
     const price = formData.get("price") as string;
     const category = formData.get("category") as string;
     const description = formData.get("description") as string;
-    const stock = formData.get("stock") as string;
-    const color = formData.get("color") as string; // Thêm màu sắc
+    const color = formData.get("color") as string;
     const file = formData.get("image") as File;
     const currentImage = formData.get("currentImage") as string;
+    
+    // NHẬN SIZE_STOCKS MỚI
+    const size_stocks = formData.get("size_stocks") as string;
 
     let imageUrl = currentImage;
 
@@ -68,9 +76,10 @@ export async function PUT(req: Request) {
       imageUrl = `/uploads/${filename}`;
     }
 
+    // CẬP NHẬT VÀO DATABASE
     const result = await query(
-      "UPDATE products SET name=$1, price=$2, category=$3, description=$4, image_url=$5, stock=$6, color=$7 WHERE id=$8 RETURNING *",
-      [name, parseFloat(price), category, description, imageUrl, parseInt(stock), color, id]
+      "UPDATE products SET name=$1, price=$2, category=$3, description=$4, image_url=$5, size_stocks=$6, color=$7 WHERE id=$8 RETURNING *",
+      [name, parseFloat(price), category, description, imageUrl, size_stocks, color, id]
     );
     return NextResponse.json(result.rows[0]);
   } catch (error: any) {

@@ -5,31 +5,45 @@ export async function POST(req: Request) {
   try {
     const { user_id, total_amount, shipping_address, items } = await req.json();
 
-    // Kiểm tra đầu vào
-    if (!user_id || !total_amount || !items || items.length === 0) {
-      return NextResponse.json({ error: "Thiếu thông tin đơn hàng hoặc sản phẩm" }, { status: 400 });
+    for (const item of items) {
+      const res = await query("SELECT size_stocks, name FROM products WHERE id = $1", [item.product_id]);
+      const product = res.rows[0];
+      const stockForSize = product.size_stocks[item.size] || 0;
+
+      if (stockForSize < item.quantity) {
+        return NextResponse.json(
+          { error: `OUT OF STOCK: ${product.name} (Size ${item.size}) only has ${stockForSize} left!` },
+          { status: 400 }
+        );
+      }
     }
 
-    // 1. Chèn đơn hàng vào bảng orders và lấy ID (Dùng RETURNING id)
     const orderResult = await query(
       "INSERT INTO orders (user_id, total_amount, status, shipping_address) VALUES ($1, $2, $3, $4) RETURNING id",
       [user_id, total_amount, 'Pending', shipping_address]
     );
-
     const orderId = orderResult.rows[0].id;
 
-    // 2. Chèn từng sản phẩm vào bảng order_items
-    // Chúng ta lặp qua mảng items nhận được từ frontend
     for (const item of items) {
       await query(
-        "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)",
-        [orderId, item.product_id, item.quantity, item.price]
+        "INSERT INTO order_items (order_id, product_id, quantity, price, size) VALUES ($1, $2, $3, $4, $5)",
+        [orderId, item.product_id, item.quantity, item.price, item.size]
+      );
+
+      await query(
+        `UPDATE products 
+         SET size_stocks = jsonb_set(
+           size_stocks, 
+           array[$1], 
+           (COALESCE((size_stocks->>$1)::int, 0) - $2)::text::jsonb
+         )
+         WHERE id = $3`,
+        [item.size, item.quantity, item.product_id]
       );
     }
 
-    return NextResponse.json({ message: "Order success", orderId }, { status: 201 });
+    return NextResponse.json({ message: "ORDER SECURED" }, { status: 201 });
   } catch (error: any) {
-    console.error("Order API Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "INTERNAL SERVER ERROR" }, { status: 500 });
   }
 }

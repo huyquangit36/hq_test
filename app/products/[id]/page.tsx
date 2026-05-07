@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ChatButton } from "@/components/chat-button";
+import { toast, Toaster } from "sonner";
 import Link from "next/link";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -21,6 +22,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [newQuestion, setNewQuestion] = useState("");
   const [isPosting, setIsPosting] = useState(false);
 
+  const ALL_SIZES = ["S", "M", "L", "XL"];
+
   const fetchData = async () => {
     try {
       const [prodRes, revRes, quesRes] = await Promise.all([
@@ -32,7 +35,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       const revData = await revRes.json();
       const quesData = await quesRes.json();
       
-      if (!prodData.error) setProduct(prodData);
+      if (!prodData.error) {
+        setProduct(prodData);
+        const firstAvailableSize = ALL_SIZES.find(s => (prodData.size_stocks?.[s] || 0) > 0);
+        if (firstAvailableSize) setSelectedSize(firstAvailableSize);
+      }
       if (Array.isArray(revData)) setReviews(revData);
       if (Array.isArray(quesData)) setQuestions(quesData);
       
@@ -49,20 +56,57 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   }, [id]);
 
   const addToCart = () => {
+    if (!product) return;
+
     const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const existingItemIndex = currentCart.findIndex((item: any) => item.id === product.id && item.size === selectedSize);
-    if (existingItemIndex > -1) {
-      currentCart[existingItemIndex].quantity = (currentCart[existingItemIndex].quantity || 1) + 1;
-    } else {
-      currentCart.push({ id: product.id, name: product.name, price: product.price, image: product.image_url, size: selectedSize, quantity: 1 });
+    
+    const stockForSelectedSize = product.size_stocks?.[selectedSize] || 0;
+
+    const existingItemIndex = currentCart.findIndex(
+      (item: any) => item.id === product.id && item.size === selectedSize
+    );
+
+    const quantityInCart = existingItemIndex > -1 ? currentCart[existingItemIndex].quantity : 0;
+
+    if (quantityInCart + 1 > stockForSelectedSize) {
+      toast.error("OUT OF STOCK", {
+        description: `Size ${selectedSize} currently has only ${stockForSelectedSize} items available.`,
+        style: { background: '#000', color: '#fff', border: '1px solid #27272a' }
+      });
+      return;
     }
+
+    if (existingItemIndex > -1) {
+      currentCart[existingItemIndex].quantity += 1;
+    } else {
+      currentCart.push({ 
+        id: product.id, 
+        name: product.name, 
+        price: product.price, 
+        image: product.image_url, 
+        size: selectedSize, 
+        quantity: 1,
+        stock: stockForSelectedSize 
+      });
+    }
+
     localStorage.setItem("cart", JSON.stringify(currentCart));
     window.dispatchEvent(new Event("cart-updated"));
+
+    toast.success("ADDED TO BAG", {
+      description: `${product.name} - Size ${selectedSize} is ready.`,
+      style: { background: '#000', color: '#fff', border: '1px solid #27272a' }
+    });
   };
 
   const handlePostQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return alert("Vui lòng đăng nhập để đặt câu hỏi!");
+    if (!user) {
+      toast.error("LOGIN REQUIRED", {
+        description: "Please log in to ask a question.",
+      });
+      return;
+    }
     setIsPosting(true);
     const res = await fetch("/api/comments", {
       method: "POST",
@@ -71,6 +115,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     if (res.ok) {
       setNewQuestion("");
       fetchData();
+      toast.success("QUESTION POSTED", {
+        description: "Your inquiry has been sent to the HQ team.",
+      });
     }
     setIsPosting(false);
   };
@@ -78,8 +125,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   if (loading) return <div className="flex justify-center items-center min-h-screen bg-black"><Loader2 className="animate-spin text-red-600" /></div>;
   if (!product) return <div className="p-20 text-center text-white bg-black min-h-screen uppercase font-black italic">Product not found.</div>;
 
+  const isOutOfStock = !ALL_SIZES.some(s => (product.size_stocks?.[s] || 0) > 0);
+
   return (
     <div className="min-h-screen bg-black text-white font-sans">
+      <Toaster position="top-center" theme="dark" closeButton />
       <Header />
       <main className="max-w-7xl mx-auto px-4 py-24">
         <Link href="/products" className="flex items-center gap-2 text-zinc-500 hover:text-white mb-10 transition-colors uppercase text-xs font-black tracking-widest">
@@ -94,6 +144,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               fill 
               className="object-cover hover:scale-110 transition-transform duration-1000" 
             />
+            {isOutOfStock && (
+              <div className="absolute inset-0 bg-black/60 z-10 flex items-center justify-center">
+                <span className="border border-white px-6 py-3 text-white font-black italic uppercase text-2xl tracking-tighter">Sold Out</span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col justify-center space-y-10">
@@ -101,7 +156,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <span className="text-red-600 font-black uppercase tracking-[0.4em] text-[10px] italic">Authentic Drop.</span>
               <h1 className="text-6xl font-black uppercase italic tracking-tighter mt-4 leading-none">{product.name}</h1>
               <p className="text-5xl font-black italic text-red-600 mt-6 tracking-tighter">${parseFloat(product.price).toFixed(2)}</p>
-              <p className="text-zinc-500 text-xs uppercase font-bold mt-2 tracking-widest">Color: {product.color || "Standard"}</p>
+              <div className="flex items-center gap-4 mt-4 text-[10px] font-black uppercase tracking-widest italic">
+                 <p className="text-zinc-500">Color: {product.color || "Standard"}</p>
+                 <span className="h-1 w-1 rounded-full bg-zinc-800" />
+                 <p className={product.size_stocks?.[selectedSize] > 0 ? "text-green-500" : "text-red-600"}>
+                   {selectedSize}: {product.size_stocks?.[selectedSize] || 0} left
+                 </p>
+              </div>
             </div>
             
             <div className="space-y-4 text-zinc-400 leading-relaxed italic text-sm max-w-md">
@@ -111,14 +172,46 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="space-y-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Select Size</p>
               <div className="flex gap-4">
-                {["S", "M", "L", "XL"].map((size) => (
-                  <button key={size} onClick={() => setSelectedSize(size)} className={`w-14 h-14 border flex items-center justify-center font-black transition-all ${selectedSize === size ? "border-red-600 bg-red-600 text-white" : "border-zinc-800 text-zinc-600 hover:border-zinc-400"}`}>{size}</button>
-                ))}
+                {ALL_SIZES.map((size) => {
+                  const sizeStock = product.size_stocks?.[size] || 0;
+                  return (
+                    <button 
+                      key={size} 
+                      onClick={() => setSelectedSize(size)} 
+                      className={`w-14 h-14 border flex flex-col items-center justify-center font-black transition-all relative ${
+                        selectedSize === size 
+                        ? "border-red-600 bg-red-600 text-white" 
+                        : sizeStock > 0 
+                          ? "border-zinc-800 text-zinc-600 hover:border-zinc-400"
+                          : "border-zinc-900 text-zinc-800 cursor-not-allowed opacity-30"
+                      }`}
+                    >
+                      <span className="text-xs">{size}</span>
+                      {sizeStock <= 5 && sizeStock > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-white text-black text-[7px] px-1">LOW</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <Button onClick={addToCart} className="w-full bg-white text-black hover:bg-red-600 hover:text-white py-10 text-xl font-black uppercase italic rounded-none flex gap-4 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-              <ShoppingBag className="h-6 w-6" /> Add to bag
+            <Button 
+              onClick={addToCart} 
+              disabled={isOutOfStock || (product.size_stocks?.[selectedSize] || 0) <= 0}
+              className={`w-full py-10 text-xl font-black uppercase italic rounded-none flex gap-4 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)] ${
+                isOutOfStock || (product.size_stocks?.[selectedSize] || 0) <= 0
+                ? "bg-zinc-900 text-zinc-600 cursor-not-allowed" 
+                : "bg-white text-black hover:bg-red-600 hover:text-white"
+              }`}
+            >
+              {(product.size_stocks?.[selectedSize] || 0) > 0 ? (
+                <>
+                  <ShoppingBag className="h-6 w-6" /> Add to bag
+                </>
+              ) : (
+                "Out of Stock in this size"
+              )}
             </Button>
           </div>
         </div>
@@ -153,7 +246,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 {rev.image_url && (
                   <div onClick={() => setSelectedImage(rev.image_url)} className="relative h-48 w-full bg-zinc-900 border border-zinc-800 overflow-hidden cursor-zoom-in group">
                     <img src={rev.image_url} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" alt="Review" />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-black uppercase italic">Click to expand</div>
                   </div>
                 )}
 
@@ -199,7 +291,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                              <p className="text-zinc-400 text-sm italic leading-relaxed">"{q.content}"</p>
                           </div>
                        </div>
-                       {/* THUẬT TOÁN: Hiển thị phản hồi thật từ Database */}
                        {q.is_answered && (
                          <div className="ml-14 bg-zinc-900/30 border-l-2 border-red-600 p-6 space-y-2 animate-in slide-in-from-left-2">
                             <div className="flex items-center gap-2">
@@ -211,18 +302,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                        )}
                     </div>
                   ))}
-                  {questions.length === 0 && (
-                    <div className="py-20 text-center border border-zinc-900 border-dashed">
-                       <p className="text-zinc-700 font-black uppercase italic text-sm tracking-widest">No inquiries yet. Start the conversation.</p>
-                    </div>
-                  )}
                </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* OVERLAY XEM ẢNH TO */}
       {selectedImage && (
         <div className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setSelectedImage(null)}>
           <button className="absolute top-10 right-10 text-white hover:text-red-600 transition-colors"><X className="h-10 w-10" /></button>

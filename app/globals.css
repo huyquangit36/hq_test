@@ -1,82 +1,72 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* BỎ DARK MODE VARIANT VÌ BẠN MUỐN WEB LUÔN SÁNG */
 
 :root {
-  --background: oklch(0.09 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.12 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.12 0 0);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.98 0 0);
-  --primary-foreground: oklch(0.09 0 0);
-  --secondary: oklch(0.18 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.75 0.15 45);
-  --accent-foreground: oklch(0.09 0 0);
-  --destructive: oklch(0.55 0.22 25);
+  /* TÔNG MÀU SÁNG: MINT WHITE / JADE / NAVY */
+
+  /* 1. MÀU NỀN: Trắng ánh Mint (Rất sạch và sáng) */
+  --background: oklch(0.98 0.01 160);
+  --foreground: oklch(0.22 0.06 240); /* Chữ màu Navy đậm nhất để dễ đọc */
+
+  /* 2. MÀU CARD: Trắng tinh khiết */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.06 240);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.06 240);
+
+  /* 3. MÀU CHỦ ĐẠO (PRIMARY): Màu Jade Green (Dòng thứ 2 trong ảnh) */
+  /* Màu này dùng cho Nút bấm, Badge sẽ rất sang trên nền trắng */
+  --primary: oklch(0.65 0.1 170);
+  --primary-foreground: oklch(0.98 0.01 160);
+
+  /* 4. MÀU PHỤ (SECONDARY): Màu Deep Teal (Dòng thứ 3) */
+  --secondary: oklch(0.45 0.06 190);
+  --secondary-foreground: oklch(0.98 0.01 160);
+
+  --muted: oklch(0.92 0.02 170);
+  --muted-foreground: oklch(0.4 0.04 190);
+
+  /* 5. MÀU NHẤN (ACCENT): Màu Mint Neon (Dòng 1 trong ảnh) */
+  --accent: oklch(0.88 0.12 160);
+  --accent-foreground: oklch(0.22 0.06 240);
+
+  /* Màu cảnh báo */
+  --destructive: oklch(0.6 0.18 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.25 0 0);
-  --input: oklch(0.18 0 0);
-  --ring: oklch(0.75 0.15 45);
-  --chart-1: oklch(0.75 0.15 45);
-  --chart-2: oklch(0.65 0.12 180);
-  --chart-3: oklch(0.55 0.1 220);
-  --chart-4: oklch(0.7 0.18 85);
-  --chart-5: oklch(0.6 0.15 300);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.06 0 0);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.75 0.15 45);
-  --sidebar-primary-foreground: oklch(0.09 0 0);
-  --sidebar-accent: oklch(0.18 0 0);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.25 0 0);
-  --sidebar-ring: oklch(0.75 0.15 45);
+
+  /* Viền và Input: Dùng màu xám xanh nhạt để thanh thoát */
+  --border: oklch(0.88 0.03 170);
+  --input: oklch(0.92 0.02 170);
+  --ring: oklch(0.65 0.1 170);
+
+  /* Biểu đồ sáng */
+  --chart-1: oklch(0.65 0.1 170);
+  --chart-2: oklch(0.45 0.06 190);
+  --chart-3: oklch(0.88 0.12 160);
+  --chart-4: oklch(0.3 0.05 200);
+  --chart-5: oklch(0.5 0.08 180);
+
+  --radius: 0rem; /* Streetwear giữ nguyên góc vuông cho chất */
+
+  /* Sidebar sáng */
+  --sidebar: oklch(0.96 0.01 170);
+  --sidebar-foreground: oklch(0.22 0.06 240);
+  --sidebar-primary: oklch(0.65 0.1 170);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.9 0.03 170);
+  --sidebar-accent-foreground: oklch(0.22 0.06 240);
+  --sidebar-border: oklch(0.88 0.03 170);
+  --sidebar-ring: oklch(0.65 0.1 170);
 }
 
-.dark {
-  --background: oklch(0.09 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.12 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.12 0 0);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.98 0 0);
-  --primary-foreground: oklch(0.09 0 0);
-  --secondary: oklch(0.18 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.75 0.15 45);
-  --accent-foreground: oklch(0.09 0 0);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.25 0 0);
-  --input: oklch(0.18 0 0);
-  --ring: oklch(0.75 0.15 45);
-  --chart-1: oklch(0.75 0.15 45);
-  --chart-2: oklch(0.65 0.12 180);
-  --chart-3: oklch(0.55 0.1 220);
-  --chart-4: oklch(0.7 0.18 85);
-  --chart-5: oklch(0.6 0.15 300);
-  --sidebar: oklch(0.06 0 0);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.75 0.15 45);
-  --sidebar-primary-foreground: oklch(0.09 0 0);
-  --sidebar-accent: oklch(0.18 0 0);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.25 0 0);
-  --sidebar-ring: oklch(0.75 0.15 45);
-}
+/* Xóa bỏ hoàn toàn định nghĩa .dark để web không bị nhảy màu khi hệ thống đổi chế độ tối */
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -120,6 +110,7 @@
     @apply border-border outline-ring/50;
   }
   body {
+    /* Ép buộc màu nền sáng và chữ đậm */
     @apply bg-background text-foreground;
   }
 }
