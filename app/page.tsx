@@ -8,10 +8,30 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
 import { ChatButton } from "@/components/chat-button";
+import { subscribeAction } from "@/app/actions/subscribe";
+import { toast } from "sonner";
 
 export default function LandingPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState("");
+  const handleSubscribe = async () => {
+    if (!email) return;
+    setSubmitting(true);
+    setStatusMsg("");
+
+    const result = await subscribeAction(email);
+
+    if (result.success) {
+      setStatusMsg(result.success);
+      setEmail("");
+    } else {
+      setStatusMsg(result.error || "ERROR");
+    }
+    setSubmitting(false);
+  };
 
   useEffect(() => {
     fetch("/api/products")
@@ -189,21 +209,38 @@ export default function LandingPage() {
       </section>
 
       {/* NEWSLETTER SECTION */}
-      <section className="py-20 md:py-32 border-t border-zinc-900 px-6">
+<section className="py-20 md:py-32 border-t border-zinc-900 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-2xl mx-auto space-y-8">
             <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter">Join the Pack.</h2>
-            <p className="text-zinc-500 text-[10px] md:text-sm font-bold uppercase italic tracking-widest px-4">Subscribe to get exclusive early access to drops.</p>
+            <p className="text-zinc-500 text-[10px] md:text-sm font-bold uppercase italic tracking-widest px-4">
+              Subscribe to get exclusive early access to drops.
+            </p>
+            
             <div className="flex flex-col sm:flex-row items-stretch gap-0 border border-zinc-800 overflow-hidden">
               <input 
                 type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="YOUR EMAIL ADDRESS" 
-                className="flex-1 bg-zinc-900 px-6 py-5 text-[10px] font-bold uppercase tracking-widest outline-none focus:bg-zinc-800 transition-colors border-b sm:border-b-0 sm:border-r border-zinc-800"
+                className="flex-1 bg-zinc-900 px-6 py-5 text-[10px] font-bold tracking-widest outline-none focus:bg-zinc-800 transition-colors border-b sm:border-b-0 sm:border-r border-zinc-800"
               />
-              <Button className="bg-white text-black hover:bg-red-600 hover:text-white rounded-none px-12 py-5 sm:py-0 h-auto text-[10px] font-black uppercase italic transition-all shrink-0">
-                Subscribe
+              <Button 
+                onClick={handleSubscribe}
+                disabled={submitting}
+                className="bg-white text-black hover:bg-red-600 hover:text-white rounded-none px-12 py-5 sm:py-0 h-auto text-[10px] font-black uppercase italic transition-all shrink-0"
+              >
+                {submitting ? "Processing..." : "Subscribe"}
               </Button>
             </div>
+
+            {/* Thông báo phản hồi */}
+            {statusMsg && (
+              <p className={`text-[10px] font-black uppercase italic tracking-widest ${statusMsg.includes("ERROR") ? "text-red-600" : "text-green-500"}`}>
+                {statusMsg}
+              </p>
+            )}
+
             <div className="flex justify-center gap-6 md:gap-8 pt-8">
               <Instagram className="h-5 w-5 text-zinc-500 hover:text-red-600 cursor-pointer transition-colors" />
               <Facebook className="h-5 w-5 text-zinc-500 hover:text-red-600 cursor-pointer transition-colors" />
