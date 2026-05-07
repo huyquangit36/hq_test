@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { ShoppingCart, Users, DollarSign, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,56 +11,82 @@ export default function AdvancedStatsPage() {
     fetch("/api/admin/stats").then(res => res.json()).then(setData);
   }, []);
 
-  if (!data) return <div className="p-8 text-white">Đang tải báo cáo...</div>;
+  if (!data) return <div className="p-8 text-white uppercase font-black animate-pulse text-center">Analysing Live Data...</div>;
 
   const avgOrder = data.revenue / (data.orders || 1);
 
   return (
-    <div className="p-8 space-y-8 bg-black text-white min-h-screen">
+    <div className="p-8 space-y-8 bg-black text-white min-h-screen font-sans">
       <div>
-        <h1 className="text-3xl font-bold">Statistics & Reports</h1>
-        <p className="text-muted-foreground text-sm">View your store performance and analytics</p>
+        <h1 className="text-4xl font-black uppercase italic tracking-tighter">Statistics & Reports<span className="text-red-600">.</span></h1>
+        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1">Real-time Growth Metrics</p>
       </div>
 
-      {/* 4 Thẻ Summary phía trên */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total Revenue" value={`$${data.revenue.toFixed(2)}`} icon={<DollarSign className="h-4 w-4"/>} change="+12.5%" />
-        <StatCard title="Total Orders" value={data.orders} icon={<ShoppingCart className="h-4 w-4"/>} change="+8.2%" />
-        <StatCard title="Active Customers" value={data.customers} icon={<Users className="h-4 w-4"/>} change="+4.1%" />
-        <StatCard title="Avg. Order Value" value={`$${avgOrder.toFixed(2)}`} icon={<TrendingUp className="h-4 w-4"/>} change="-2.3%" isLoss />
+        <DonutStatCard 
+          title="Total Revenue" 
+          value={`$${data.revenue.toFixed(2)}`} 
+          items={(data.categoryDist || []).map((c: any) => ({ label: c.category, val: parseFloat(c.revenue_share || 0) }))}
+          total={data.revenue}
+          icon={<DollarSign className="h-3 w-3"/>}
+          change={data.revenueGrowth} // TĂNG TRƯỞNG THẬT
+        />
+        <DonutStatCard 
+          title="Total Orders" 
+          value={data.orders} 
+          items={(data.categoryDist || []).map((c: any) => ({ label: c.category, val: parseInt(c.count || 0) }))}
+          total={data.orders}
+          icon={<ShoppingCart className="h-3 w-3"/>}
+          change={data.ordersGrowth} // TĂNG TRƯỞNG THẬT
+        />
+        <DonutStatCard 
+          title="Active Customers" 
+          value={data.customers} 
+          items={[{ label: 'Users', val: data.customers }]}
+          total={data.customers}
+          icon={<Users className="h-3 w-3"/>}
+          change={data.customersGrowth} // TĂNG TRƯỞNG THẬT
+        />
+        <DonutStatCard 
+          title="Avg. Order Value" 
+          value={`$${avgOrder.toFixed(2)}`} 
+          items={[{ label: 'Value', val: avgOrder }]}
+          total={avgOrder}
+          icon={<TrendingUp className="h-4 w-4"/>}
+          change="Live"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Cột trái: Trạng thái đơn hàng */}
-        <Card className="bg-[#0a0a0a] border-zinc-800 text-white">
-          <CardHeader><CardTitle className="text-sm font-bold uppercase">Order Status Distribution</CardTitle></CardHeader>
+        <Card className="bg-[#0a0a0a] border-zinc-800 text-white shadow-none">
+          <CardHeader><CardTitle className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Order Status Distribution</CardTitle></CardHeader>
           <CardContent className="space-y-6">
-            <ProgressBar label="Pending" value={data.statusDist.find((s:any)=>s.status==='Pending')?.count || 0} total={data.orders} color="bg-yellow-500" />
-            <ProgressBar label="Shipping" value={data.statusDist.find((s:any)=>s.status==='Shipping')?.count || 0} total={data.orders} color="bg-blue-500" />
-            <ProgressBar label="Completed" value={data.statusDist.find((s:any)=>s.status==='Completed')?.count || 0} total={data.orders} color="bg-green-500" />
+            <ProgressBar label="Pending" value={(data.statusDist || []).find((s:any)=>s.status==='Pending')?.count || 0} total={data.orders} color="bg-yellow-500" />
+            <ProgressBar label="Shipping" value={(data.statusDist || []).find((s:any)=>s.status==='Shipping')?.count || 0} total={data.orders} color="bg-blue-500" />
+            <ProgressBar label="Completed" value={(data.statusDist || []).find((s:any)=>s.status==='Completed')?.count || 0} total={data.orders} color="bg-green-500" />
           </CardContent>
         </Card>
 
-        {/* Cột phải: Sản phẩm theo danh mục */}
-        <Card className="bg-[#0a0a0a] border-zinc-800 text-white">
-          <CardHeader><CardTitle className="text-sm font-bold uppercase">Products by Category</CardTitle></CardHeader>
+        <Card className="bg-[#0a0a0a] border-zinc-800 text-white shadow-none">
+          <CardHeader><CardTitle className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Products by Category</CardTitle></CardHeader>
           <CardContent className="space-y-6">
              {['tshirts', 'hoodies', 'pants', 'accessories'].map(cat => (
                 <ProgressBar key={cat} label={cat.charAt(0).toUpperCase() + cat.slice(1)} 
-                  value={data.categoryDist.find((c:any)=>c.category===cat)?.count || 0} 
-                  total={data.totalProducts || 10} color="bg-orange-500" />
+                  value={(data.categoryDist || []).find((c:any)=>c.category===cat)?.count || 0} 
+                  total={data.totalProducts || 1} color="bg-red-600" />
              ))}
           </CardContent>
         </Card>
       </div>
 
-      {/* Bảng Top Customers */}
-      <Card className="bg-[#0a0a0a] border-zinc-800 text-white">
-        <CardHeader><CardTitle className="text-sm font-bold uppercase">Top Customers by Spending</CardTitle></CardHeader>
+      <Card className="bg-[#0a0a0a] border-zinc-800 text-white shadow-none">
+        <CardHeader className="border-b border-zinc-900 mb-4">
+          <CardTitle className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Top Customers by Spending</CardTitle>
+        </CardHeader>
         <CardContent>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-zinc-500 border-b border-zinc-800">
+              <tr className="text-zinc-600 border-b border-zinc-900 uppercase text-[10px] font-black">
                 <th className="text-left p-4">Rank</th>
                 <th className="text-left p-4">Customer</th>
                 <th className="text-center p-4">Orders</th>
@@ -67,15 +94,15 @@ export default function AdvancedStatsPage() {
               </tr>
             </thead>
             <tbody>
-              {data.topCustomers.map((c: any, index: number) => (
-                <tr key={index} className="border-b border-zinc-900 last:border-0">
-                  <td className="p-4"><span className="bg-zinc-800 w-6 h-6 flex items-center justify-center rounded-full text-xs">{index + 1}</span></td>
+              {(data.topCustomers || []).map((c: any, index: number) => (
+                <tr key={index} className="border-b border-zinc-900 last:border-0 hover:bg-zinc-950 transition-colors">
+                  <td className="p-4 font-black italic text-red-600">0{index + 1}</td>
                   <td className="p-4">
-                    <div className="font-bold">{c.full_name}</div>
-                    <div className="text-xs text-zinc-500">{c.email}</div>
+                    <div className="font-black uppercase italic text-white text-xs">{c.full_name}</div>
+                    <div className="text-[10px] text-zinc-600 font-bold uppercase">{c.email}</div>
                   </td>
-                  <td className="p-4 text-center">{c.order_count}</td>
-                  <td className="p-4 text-right font-bold text-green-400">${parseFloat(c.total_spent).toFixed(2)}</td>
+                  <td className="p-4 text-center font-mono text-zinc-400">{c.order_count}</td>
+                  <td className="p-4 text-right font-black italic text-white">${parseFloat(c.total_spent).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -86,34 +113,48 @@ export default function AdvancedStatsPage() {
   );
 }
 
-// Component con cho các thẻ nhỏ
-function StatCard({ title, value, icon, change, isLoss }: any) {
+function DonutStatCard({ title, value, items, total, icon, change }: any) {
+  let currentOffset = 0;
   return (
-    <Card className="bg-[#0a0a0a] border-zinc-800 text-white">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-xs font-medium text-zinc-400">{title}</CardTitle>
-        <div className="text-zinc-500">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className={`text-[10px] mt-1 ${isLoss ? 'text-red-500' : 'text-green-500'}`}>
-          {isLoss ? '↘' : '↗'} {change} <span className="text-zinc-500">from last month</span>
-        </p>
-      </CardContent>
+    <Card className="bg-[#0a0a0a] border-zinc-800 text-white rounded-none shadow-none p-6">
+      <div className="flex flex-col items-center gap-6">
+        <div className="flex justify-between items-center w-full">
+           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">{title}</p>
+           <div className="text-red-600">{icon}</div>
+        </div>
+        <div className="relative h-32 w-32">
+          <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+            <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#111111" strokeWidth="3" />
+            {items.map((item: any, i: number) => {
+              const percentage = (item.val / (total || 1)) * 100;
+              const strokeDasharray = `${percentage} ${100 - percentage}`;
+              const strokeOffset = -currentOffset;
+              currentOffset += percentage;
+              const sliceColors = ['#dc2626', '#ffffff', '#3f3f46', '#71717a'];
+              return (
+                <circle key={i} cx="18" cy="18" r="15.9" fill="transparent" stroke={sliceColors[i % sliceColors.length]} strokeWidth="3" strokeDasharray={strokeDasharray} strokeDashoffset={strokeOffset} className="transition-all duration-1000" />
+              );
+            })}
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-lg font-black italic tracking-tighter text-white">{value}</span>
+            <span className={`text-[8px] font-black uppercase ${change.includes('-') ? 'text-red-500' : 'text-green-500'}`}>{change}</span>
+          </div>
+        </div>
+      </div>
     </Card>
   );
 }
 
-// Component con cho thanh Progress Bar
 function ProgressBar({ label, value, total, color }: any) {
   const percentage = Math.min((value / (total || 1)) * 100, 100);
   return (
     <div className="space-y-2">
-      <div className="flex justify-between text-xs">
-        <span className="text-zinc-300">{label}</span>
-        <span className="font-bold">{value}</span>
+      <div className="flex justify-between text-[10px] font-black uppercase italic tracking-widest">
+        <span className="text-zinc-400">{label}</span>
+        <span className="text-white">{value}</span>
       </div>
-      <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
+      <div className="h-[2px] w-full bg-zinc-900 overflow-hidden">
         <div className={`h-full ${color} transition-all duration-1000`} style={{ width: `${percentage}%` }}></div>
       </div>
     </div>

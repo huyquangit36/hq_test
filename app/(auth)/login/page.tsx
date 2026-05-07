@@ -112,11 +112,11 @@ export default function LoginPage() {
               <div className="flex items-center justify-between">
                 <FieldLabel htmlFor="password">Password</FieldLabel>
                 <Link 
-                  href="/forgot-password" 
-                  className="text-sm text-accent hover:text-accent/80 transition-colors"
-                >
-                  Forgot password?
-                </Link>
+  href="/forgot-password" 
+  className="text-sm text-accent hover:text-accent/80 transition-colors"
+>
+  Forgot password?
+</Link>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />

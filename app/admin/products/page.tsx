@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Plus, Trash2, Search, X, Loader2, Upload, Pencil, Palette, Tag } from "lucide-react";
+import { Plus, Trash2, Search, X, Loader2, Upload, Pencil, Palette, Tag, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -11,8 +11,12 @@ export default function AdminProductsPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showModal, setShowModal] = useState(false);
   
+  // THUẬT TOÁN: State cho bộ lọc
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterStock, setFilterStock] = useState("all"); // all, low, out
+
+  const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -53,6 +57,18 @@ export default function AdminProductsPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // THUẬT TOÁN: Lọc tổng hợp (Search + Category + Stock)
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = filterCategory === "all" || p.category === filterCategory;
+    
+    let matchesStock = true;
+    if (filterStock === "low") matchesStock = p.stock > 0 && p.stock < 10;
+    if (filterStock === "out") matchesStock = p.stock <= 0;
+    
+    return matchesSearch && matchesCategory && matchesStock;
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -131,9 +147,7 @@ export default function AdminProductsPage() {
     setPreviewUrl(null);
   };
 
-  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-
-  if (loading) return <div className="p-20 text-center text-white italic animate-pulse">Loading Database...</div>;
+  if (loading) return <div className="p-20 text-center text-white italic animate-pulse">Syncing Inventory...</div>;
 
   return (
     <div className="space-y-8 p-2">
@@ -142,9 +156,33 @@ export default function AdminProductsPage() {
         <Button onClick={() => setShowModal(true)} className="bg-red-600 rounded-none font-bold uppercase italic px-8">Add Product</Button>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-        <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search items..." className="w-full pl-10 pr-4 py-2 bg-[#0a0a0a] border border-zinc-800 rounded-none text-white text-sm focus:border-red-600 outline-none" />
+      {/* THANH TÌM KIẾM VÀ BỘ LỌC (LAYOUT KHÔNG ĐỔI, CHỈ THÊM Ô CHỌN) */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search items..." className="w-full pl-10 pr-4 py-2 bg-[#0a0a0a] border border-zinc-800 rounded-none text-white text-sm focus:border-red-600 outline-none" />
+        </div>
+
+        {/* THUẬT TOÁN: Dropdown lọc theo Category */}
+        <select 
+          value={filterCategory} 
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="bg-[#0a0a0a] border border-zinc-800 text-zinc-500 text-[10px] font-black uppercase italic px-4 py-2 outline-none focus:border-red-600"
+        >
+          <option value="all">All Categories</option>
+          {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+        </select>
+
+        {/* THUẬT TOÁN: Dropdown lọc theo Stock */}
+        <select 
+          value={filterStock} 
+          onChange={(e) => setFilterStock(e.target.value)}
+          className="bg-[#0a0a0a] border border-zinc-800 text-zinc-500 text-[10px] font-black uppercase italic px-4 py-2 outline-none focus:border-red-600"
+        >
+          <option value="all">Availability</option>
+          <option value="low">Low Stock (&lt;10)</option>
+          <option value="out">Out of Stock</option>
+        </select>
       </div>
 
       <Card className="bg-[#0a0a0a] border-zinc-800 rounded-none shadow-none">
@@ -172,7 +210,9 @@ export default function AdminProductsPage() {
                   <td className="p-4 text-xs uppercase text-zinc-500 font-medium">{p.category}</td>
                   <td className="p-4 text-xs uppercase text-zinc-400 italic">{p.color || "-"}</td>
                   <td className="p-4 text-sm font-black text-red-500">${parseFloat(p.price).toFixed(2)}</td>
-                  <td className="p-4 text-xs font-mono text-zinc-400">{p.stock}</td>
+                  <td className={`p-4 text-xs font-mono ${p.stock < 10 ? 'text-red-600 font-bold' : 'text-zinc-400'}`}>
+                    {p.stock}
+                  </td>
                   <td className="p-4 text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(p)} className="text-zinc-600 hover:text-white"><Pencil className="h-4 w-4"/></Button>
@@ -183,9 +223,13 @@ export default function AdminProductsPage() {
               ))}
             </tbody>
           </table>
+          {filteredProducts.length === 0 && (
+            <p className="p-10 text-center text-zinc-700 uppercase italic font-bold text-xs tracking-widest">No matching results found.</p>
+          )}
         </CardContent>
       </Card>
 
+      {/* Modal giữ nguyên như cũ... */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
           <div className="bg-[#0a0a0a] border border-zinc-800 rounded-none p-8 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto text-white">
