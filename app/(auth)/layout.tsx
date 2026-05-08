@@ -1,32 +1,30 @@
-import Link from "next/link"
+import { Header } from "@/components/header";
+import { Toaster } from "sonner";
 
 export default function AuthLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 h-16 flex items-center">
-          <Link href="/" className="text-xl font-bold tracking-tighter">
-            HQ<span className="text-accent">.</span>
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-background font-sans">
       
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        {children}
+      <Header />
+      
+      <Toaster position="top-center" theme="light" closeButton />
+      <main className="flex-1 flex flex-col items-center justify-start pt-32 md:pt-40 px-4 pb-20">
+        <div className="w-full flex justify-center animate-in fade-in slide-in-from-top-4 duration-1000">
+          {children}
+        </div>
       </main>
       
-      {/* Footer */}
-      <footer className="border-t border-border py-6">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} HQ Streetwear. All rights reserved.</p>
+      <footer className="border-t border-border py-10 bg-muted/20">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <p className="text-[10px] font-black uppercase italic tracking-[0.5em] text-muted-foreground opacity-50">
+            &copy; {new Date().getFullYear()} HQ Streetwear Collective // All Rights Reserved
+          </p>
         </div>
       </footer>
     </div>
-  )
+  );
 }

@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Loader2, ShieldAlert, ArrowRight } from "lucide-react";
+import { Lock, Loader2, ShieldAlert, ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Toaster, toast } from "sonner";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -27,83 +26,96 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // KIỂM TRA QUYỀN ADMIN
         if (data.user.role !== "admin") {
-          setError("ACCESS DENIED: Unauthorized privileges.");
+          toast.error("ACCESS DENIED", {
+            description: "Unauthorized privileges detected. Attempt logged.",
+            style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--destructive)' }
+          });
           localStorage.removeItem("user");
           localStorage.removeItem("token");
         } else {
           localStorage.setItem("token", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
-          router.push("/admin"); // Vào thẳng dashboard
+          toast.success("AUTHORIZATION GRANTED", { description: "Establishing secure terminal link..." });
+          setTimeout(() => router.push("/admin"), 1500);
         }
       } else {
-        setError(data.error || "Invalid credentials.");
+        toast.error("INVALID CREDENTIALS", { description: data.error });
       }
     } catch (err) {
-      setError("System connection failed.");
+      toast.error("SYSTEM ERROR", { description: "Connection to core terminal failed." });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center space-y-2">
-          <div className="inline-block p-4 bg-red-600/10 rounded-full mb-4">
-            <Lock className="h-8 w-8 text-red-600" />
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 font-sans">
+      <Toaster position="top-center" theme="light" />
+      
+      <div className="w-full max-w-xl animate-in fade-in zoom-in-95 duration-700">
+        <div className="text-center mb-12">
+          <div className="inline-block p-5 bg-primary/10 border border-primary/20 rounded-none mb-8">
+            <Lock className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-4xl font-black uppercase italic tracking-tighter">Admin Auth<span className="text-red-600">.</span></h1>
-          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em]">Restricted Terminal Access</p>
+          <h1 className="text-6xl font-black uppercase italic tracking-tighter leading-none">
+            Admin<br />Terminal<span className="text-primary">.</span>
+          </h1>
+          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] mt-6 italic">
+            Restricted Entry // Authorization Required
+          </p>
         </div>
 
-        <form onSubmit={handleAdminLogin} className="space-y-4">
-          <div className="space-y-4 bg-zinc-950 border border-zinc-900 p-8 shadow-2xl">
-            <div className="space-y-2">
-              <label className="text-[9px] font-black uppercase text-zinc-600">Administrator ID</label>
+        <form onSubmit={handleAdminLogin} className="space-y-6">
+          {/* Box Form bề thế max-w-xl */}
+          <div className="bg-background border-y-4 border-foreground p-10 md:p-16 shadow-2xl shadow-primary/5 space-y-8">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-foreground tracking-widest pl-1 italic">Administrator ID</label>
               <input 
-                type="email" 
-                placeholder="ADMIN@HQ.COM"
-                className="w-full bg-black border border-zinc-800 p-4 text-xs font-bold text-white focus:border-red-600 outline-none transition-all"
+                type="text" 
+                inputMode="email"
+                autoComplete="one-time-code"
+                placeholder="UID@HQSTREETWEAR.COM"
+                className="w-full bg-muted/20 border border-border p-5 text-sm font-medium outline-none focus:border-primary transition-none cursor-text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-[9px] font-black uppercase text-zinc-600">Security Key</label>
+            
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-foreground tracking-widest pl-1 italic">Security Access Key</label>
               <input 
                 type="password" 
                 placeholder="••••••••"
-                className="w-full bg-black border border-zinc-800 p-4 text-xs font-bold text-white focus:border-red-600 outline-none transition-all"
+                className="w-full bg-muted/20 border border-border p-5 text-sm font-medium outline-none focus:border-primary transition-none cursor-text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
               />
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 text-red-500 bg-red-500/10 p-3 border border-red-500/20 animate-in fade-in slide-in-from-top-1">
-                <ShieldAlert size={14} />
-                <span className="text-[10px] font-black uppercase italic">{error}</span>
-              </div>
-            )}
-
             <Button 
               disabled={loading}
-              className="w-full bg-white text-black hover:bg-red-600 hover:text-white py-8 rounded-none font-black uppercase italic transition-all group"
+              className="w-full bg-foreground text-background hover:bg-primary hover:text-primary-foreground py-10 rounded-none font-black uppercase italic text-lg transition-all cursor-pointer group shadow-xl"
             >
-              {loading ? <Loader2 className="animate-spin" /> : (
-                <>Initialize Session <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
+              {loading ? <Loader2 className="animate-spin size-6" /> : (
+                <span className="flex items-center gap-3">
+                    Initialize Session <ArrowRight className="size-6 group-hover:translate-x-2 transition-transform" />
+                </span>
               )}
             </Button>
           </div>
         </form>
 
-        <p className="text-center text-[9px] text-zinc-700 uppercase font-bold tracking-widest italic">
-          Unauthorized access attempt will be logged and reported.
-        </p>
+        <div className="mt-12 flex justify-center gap-8 opacity-20">
+            <div className="flex items-center gap-2">
+                <ShieldCheck size={14} />
+                <span className="text-[8px] font-black uppercase tracking-widest">Protocol 256-BIT</span>
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-widest">HQ SYSTEM v.26</span>
+        </div>
       </div>
     </div>
   );

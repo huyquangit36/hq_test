@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowRight, Mail } from "lucide-react";
+import { Loader2, ArrowRight, Mail, ShieldCheck, Globe } from "lucide-react";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -21,37 +21,117 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
-      <Header />
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm space-y-8 bg-zinc-950 border border-zinc-900 p-10">
-          <div className="text-center">
-            <h1 className="text-4xl font-black uppercase italic tracking-tighter">Lost Access.</h1>
-            <p className="text-zinc-500 text-[10px] uppercase font-bold mt-2 tracking-widest">Enter email to recover account</p>
+    <div className="bg-background text-foreground flex flex-col font-sans ">
+      
+      <main className="flex-1 flex p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        {/* CONTAINER RỘNG (WIDE LAYOUT) */}
+        <div className="w-full max-w-5xl bg-background border-y-4 border-foreground py-20 px-6 md:px-16 lg:px-24 relative overflow-hidden shadow-sm">
+          
+          {/* Họa tiết trang trí góc (Typography Deco) - Làm web trông đầy đặn hơn */}
+          <div className="absolute top-4 right-6 text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground/30 hidden md:block">
+            HQ Streetwear // Recovery Protocol v.26
           </div>
 
-          {!sent ? (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-700" />
-                <input 
-                  type="email" 
-                  placeholder="YOUR@EMAIL.COM" 
-                  className="w-full bg-black border border-zinc-900 p-4 pl-10 text-xs font-bold outline-none focus:border-red-600 transition-all"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+            
+            {/* PHẦN TIÊU ĐỀ (Bên trái hoặc phía trên) */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="inline-block bg-primary text-primary-foreground px-3 py-1 text-[8px] font-black uppercase italic tracking-widest">
+                Account Security
               </div>
-              <Button disabled={loading} className="w-full bg-white text-black hover:bg-red-600 hover:text-white py-8 rounded-none font-black uppercase italic">
-                {loading ? <Loader2 className="animate-spin" /> : "Send Reset Link"}
-              </Button>
-            </form>
-          ) : (
-            <div className="text-center p-6 bg-red-600/10 border border-red-600/20">
-               <p className="text-sm font-bold italic">Check your inbox. Link sent.</p>
+              <h1 className="text-6xl md:text-8xl font-black uppercase italic tracking-tighter leading-[0.85] text-foreground">
+                Lost<br />Access<span className="text-primary">.</span>
+              </h1>
+              <div className="h-1 w-24 bg-primary" />
+              <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest leading-relaxed max-w-xs">
+                Provide your identification email to re-establish your connection to the HQ archive.
+              </p>
             </div>
-          )}
+
+            {/* PHẦN FORM (Bên phải - Rộng rãi) */}
+            <div className="lg:col-span-7">
+              {!sent ? (
+                <form onSubmit={handleSubmit} className="space-y-12">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                       <label className="text-[10px] font-black uppercase text-foreground italic tracking-[0.2em]">Registered Email</label>
+                       <span className="text-[8px] text-muted-foreground uppercase font-bold">Verification step 01</span>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 pointer-events-none">
+                        <Mail size={24} className="text-primary" />
+                      </div>
+                      <input 
+                        type="text" 
+                        inputMode="email"
+                        autoComplete="one-time-code"
+                        placeholder="your@email.com" 
+                        // SỬA: Font to hơn, input rộng hơn, không ép uppercase
+                        className="w-full bg-transparent border-b-2 border-border p-6 pl-10 text-2xl font-medium outline-none focus:border-primary transition-all relative z-10 cursor-text placeholder:text-muted-foreground/30"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <Button 
+                      disabled={loading} 
+                      className="w-full bg-foreground text-background hover:bg-primary hover:text-primary-foreground py-10 rounded-none font-black uppercase italic text-md transition-all cursor-pointer shadow-xl group"
+                    >
+                      {loading ? (
+                        <Loader2 className="animate-spin h-6 w-6" />
+                      ) : (
+                        <span className="flex items-center gap-3">
+                          Reset Password <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+                        </span>
+                      )}
+                    </Button>
+
+                    <div className="flex flex-col gap-2">
+                       <p className="text-[9px] text-muted-foreground font-bold uppercase">Need more help?</p>
+                       <a 
+                        href="/login" 
+                        className="text-[10px] font-black uppercase text-primary hover:text-foreground transition-colors italic cursor-pointer tracking-widest border-b border-primary w-fit"
+                      >
+                        Return to Login
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Footer trang trí trong Card */}
+                  <div className="pt-12 border-t border-border/50 flex gap-10">
+                      <div className="flex items-center gap-2 text-muted-foreground/40">
+                        <ShieldCheck size={14} />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Secure SSL</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground/40">
+                        <Globe size={14} />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Global Access</span>
+                      </div>
+                  </div>
+                </form>
+              ) : (
+                /* TRẠNG THÁI THÀNH CÔNG */
+                <div className="py-10 space-y-8 animate-in fade-in slide-in-from-right-10 duration-700">
+                   <div className="bg-primary/10 border-l-4 border-primary p-8">
+                      <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 text-foreground">Link Dispatched.</h3>
+                      <p className="text-muted-foreground text-sm font-medium italic leading-relaxed">
+                        A recovery transmission has been sent to <span className="text-foreground font-black underline">{email}</span>. 
+                        Please authorize the request via the provided link within 60 minutes.
+                      </p>
+                   </div>
+                   <Button 
+                     onClick={() => window.location.href = "/login"}
+                     className="bg-foreground text-background py-8 px-12 rounded-none font-black uppercase italic text-xs cursor-pointer hover:bg-primary transition-all shadow-lg"
+                   >
+                     Back to Base
+                   </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </main>
     </div>

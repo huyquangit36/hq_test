@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ShoppingBag, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast, Toaster } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: {
@@ -31,14 +32,22 @@ export function ProductCard({ product }: ProductCardProps) {
     const existingItemIndex = currentCart.findIndex(
       (item: any) => item.id === product.id && item.size === selectedSize
     );
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      toast.error("AUTHENTICATION REQUIRED", {
+        description: "Please login to secure this item in your bag.",
+        style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
+      });
+      return;
+    }
 
     const quantityInCart = existingItemIndex > -1 ? currentCart[existingItemIndex].quantity : 0;
 
-    // Kiểm tra kho của Size M
+    // Kiểm tra kho của Size M với Toast hệ màu sáng
     if (quantityInCart + 1 > stockM) {
       toast.error("OUT OF STOCK", {
         description: `Size M of this product is currently out of stock.`,
-        style: { background: '#000', color: '#fff', border: '1px solid #27272a' }
+        style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--destructive)' }
       });
       return;
     }
@@ -53,42 +62,48 @@ export function ProductCard({ product }: ProductCardProps) {
         image: product.image,
         size: selectedSize,
         quantity: 1,
-        stock: stockM // Lưu stock Size M để trang checkout dùng
+        stock: stockM
       });
     }
 
     localStorage.setItem("cart", JSON.stringify(currentCart));
     window.dispatchEvent(new Event("cart-updated"));
   
-    toast.success("ADDED TO BAG.", {
-      description: `${product.name} (Size M) it has been added.`,
-      style: { background: '#000', color: '#fff', border: '1px solid #27272a' }
+    toast.success("ADDED TO BAG", {
+      description: `${product.name} (Size M) added to your drop.`,
+      style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
     });
   };
 
   const isMOutOfStock = (product.size_stocks?.M || 0) <= 0;
 
   return (
-    <div className="group relative bg-black border border-zinc-900 overflow-hidden transition-all duration-500 hover:border-zinc-700">
-      <Toaster position="top-center" theme="dark" />
-      <Link href={`/products/${product.id}`}>
-        <div className="relative aspect-[3/4] overflow-hidden bg-zinc-950">
+    <div className="group relative bg-background border border-border overflow-hidden transition-all duration-500 hover:border-primary/50">
+      <Toaster position="top-center" theme="light" />
+      
+      <Link href={`/products/${product.id}`} className="cursor-pointer">
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           <Image
             src={product.image || "/products/tee-1.jpg"}
             alt={product.name}
             fill
-            className={`object-cover transition-transform duration-700 group-hover:scale-110 ${isMOutOfStock ? 'grayscale opacity-50' : ''}`}
+            className={cn(
+              "object-cover transition-transform duration-700 group-hover:scale-110",
+              isMOutOfStock && "grayscale opacity-40"
+            )}
           />
           
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3">
+          {/* OVERLAY KHI HOVER */}
+          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
             <Button 
               onClick={addToCart}
               disabled={isMOutOfStock}
-              className={`w-40 rounded-none font-black uppercase italic text-xs py-6 transition-all transform translate-y-4 group-hover:translate-y-0 duration-500 ${
+              className={cn(
+                "w-40 rounded-none font-black uppercase italic text-[10px] py-6 transition-all transform translate-y-4 group-hover:translate-y-0 duration-500 cursor-pointer",
                 isMOutOfStock 
-                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed" 
-                : "bg-white text-black hover:bg-red-600 hover:text-white"
-              }`}
+                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border" 
+                : "bg-foreground text-background hover:bg-primary hover:text-primary-foreground shadow-xl"
+              )}
             >
               {isMOutOfStock ? (
                 "Sold Out (M)"
@@ -98,28 +113,32 @@ export function ProductCard({ product }: ProductCardProps) {
                 </>
               )}
             </Button>
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white transform translate-y-4 group-hover:translate-y-0 duration-700 delay-75">
-              <Eye className="h-3 w-3" /> View Details
+            
+            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-foreground transform translate-y-4 group-hover:translate-y-0 duration-700 delay-75 bg-white/80 px-3 py-1 border border-border">
+              <Eye className="h-3 w-3" /> View Archive
             </div>
           </div>
 
+          {/* BADGE HẾT HÀNG - Dùng màu Primary mới */}
           {isMOutOfStock && (
             <div className="absolute top-4 left-4">
-               <span className="bg-red-600 text-white text-[8px] font-black uppercase italic px-2 py-1">Size M Out</span>
+               <span className="bg-primary text-primary-foreground text-[8px] font-black uppercase italic px-2 py-1 tracking-widest">Size M Out</span>
             </div>
           )}
         </div>
       </Link>
 
-      <div className="p-4 space-y-1">
+      <div className="p-5 space-y-2">
         <div className="flex justify-between items-start">
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500">{product.category || "Streetwear"}</p>
-            <h3 className="text-sm font-black uppercase italic text-white tracking-tighter group-hover:text-red-600 transition-colors">
+          <div className="space-y-1">
+            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground italic">
+              {product.category || "Authentic Drop"}
+            </p>
+            <h3 className="text-xs font-black uppercase italic text-foreground tracking-tighter group-hover:text-primary transition-colors leading-none">
               {product.name}
             </h3>
           </div>
-          <p className="text-sm font-black italic text-white">
+          <p className="text-xs font-black italic text-foreground tracking-tighter">
             ${parseFloat(product.price.toString()).toFixed(2)}
           </p>
         </div>

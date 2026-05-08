@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { Loader2, Star, CheckCircle2, Upload, X, Check } from "lucide-react";
+import { Loader2, Star, CheckCircle2, Upload, X, Check, PackageOpen, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { toast, Toaster } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -21,10 +23,15 @@ export default function OrderHistoryPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchOrders = async (userId: string) => {
-    const res = await fetch(`/api/user/orders?userId=${userId}`);
-    const data = await res.json();
-    if (Array.isArray(data)) setOrders(data);
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/user/orders?userId=${userId}`);
+      const data = await res.json();
+      if (Array.isArray(data)) setOrders(data);
+    } catch (err) {
+      toast.error("SYNC ERROR", { description: "Failed to fetch your drop history." });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -33,6 +40,8 @@ export default function OrderHistoryPage() {
       const userData = JSON.parse(storedUser);
       setUser(userData);
       fetchOrders(userData.id);
+    } else {
+      setLoading(false);
     }
   }, []);
 
@@ -47,7 +56,10 @@ export default function OrderHistoryPage() {
   const triggerFileInput = () => fileInputRef.current?.click();
 
   const submitReview = async () => {
-    if (!comment) return alert("Vui lòng nhập nhận xét!");
+    if (!comment) {
+      toast.warning("MISSING FEEDBACK", { description: "Please drop a few words about the quality." });
+      return;
+    }
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append("user_id", user.id);
@@ -59,12 +71,12 @@ export default function OrderHistoryPage() {
     try {
       const res = await fetch("/api/reviews", { method: "POST", body: formData });
       if (res.ok) {
-        alert("Cảm ơn bạn đã đánh giá!");
+        toast.success("FEEDBACK RECEIVED", { description: "Thanks for supporting the collective." });
         handleCloseModal();
         fetchOrders(user.id);
       }
     } catch (e) {
-      alert("Lỗi khi gửi đánh giá");
+      toast.error("TRANSMISSION ERROR");
     } finally {
       setIsSubmitting(false);
     }
@@ -78,71 +90,153 @@ export default function OrderHistoryPage() {
     setPreviewUrl(null);
   };
 
-  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-red-600" /></div>;
+  if (loading) return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+      <Loader2 className="animate-spin text-primary h-12 w-12" />
+      <p className="text-[10px] font-black uppercase italic tracking-[0.5em] text-muted-foreground animate-pulse">Accessing Archives...</p>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
+      <Toaster position="top-center" theme="light" />
       <Header />
-      <main className="max-w-5xl mx-auto px-4 py-24">
-        <h1 className="text-4xl font-black uppercase italic tracking-tighter mb-12">Purchase History<span className="text-red-600">.</span></h1>
-        <div className="space-y-6">
-          {orders.map((item, index) => (
-            <div key={index} className="bg-zinc-950 border border-zinc-900 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="flex items-center gap-6">
-                <div className="relative h-20 w-20 bg-zinc-900 border border-zinc-800 overflow-hidden">
-                  <Image src={item.image_url} alt={item.name} fill className="object-cover" />
+      
+      <main className="max-w-6xl mx-auto px-4 py-32">
+        <div className="mb-16">
+          <h1 className="text-5xl md:text-7xl font-black uppercase italic tracking-tighter leading-none">
+            Purchase<br />History<span className="text-primary">.</span>
+          </h1>
+          <p className="text-muted-foreground text-[10px] font-black uppercase mt-4 tracking-[0.4em] italic">Your Verified HQ Acquisitions</p>
+        </div>
+
+        {orders.length === 0 ? (
+          <div className="py-32 text-center border-2 border-dashed border-border bg-muted/5">
+             <PackageOpen className="h-16 w-16 mx-auto mb-6 text-muted-foreground/30" />
+             <p className="text-muted-foreground italic uppercase font-black text-xs tracking-widest">No drops secured yet.</p>
+             <Button onClick={() => window.location.href='/products'} className="mt-8 bg-foreground text-background hover:bg-primary transition-all rounded-none px-10 py-6 font-black uppercase italic cursor-pointer">Shop Latest Drops</Button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {orders.map((item, index) => (
+              <div key={index} className="bg-card border border-border p-8 flex flex-col md:flex-row justify-between items-center gap-8 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all group">
+                <div className="flex items-center gap-8 w-full md:w-auto">
+                  <div className="relative h-28 w-24 bg-muted border border-border overflow-hidden flex-shrink-0">
+                    <Image src={item.image_url || "/products/tee-1.jpg"} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest italic mb-2">Registry #ORD-{item.order_id}</p>
+                    <h3 className="text-xl font-black uppercase italic text-foreground leading-none">{item.name}</h3>
+                    <div className="flex items-center gap-2 pt-2">
+                       <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                       <span className="text-[10px] font-black uppercase text-primary tracking-widest italic">{item.status}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase text-zinc-600 tracking-widest mb-2">Order #ORD-{item.order_id}</p>
-                  <h3 className="text-lg font-black uppercase italic">{item.name}</h3>
-                  <div className="flex items-center gap-2 mt-3">
-                     <CheckCircle2 className="h-3 w-3 text-green-500" />
-                     <span className="text-[9px] font-black uppercase text-green-500">{item.status}</span>
+
+                <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-10">
+                  <div className="text-right">
+                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Acquisition Price</p>
+                    <p className="font-black text-3xl tracking-tighter">${parseFloat(item.price).toFixed(2)}</p>
+                  </div>
+                  
+                  {item.review_id ? (
+                    <div className="bg-muted px-8 py-5 flex items-center gap-3 border border-border">
+                      <Check className="h-4 w-4 text-primary" />
+                      <span className="text-[10px] font-black uppercase italic text-muted-foreground">FEEDBACK LOGGED</span>
+                    </div>
+                  ) : (
+                    (item.status === 'Paid' || item.status === 'Completed') ? (
+                      <Button 
+                        onClick={() => { setSelectedProduct(item); setShowReviewModal(true); }} 
+                        className="bg-foreground text-background hover:bg-primary hover:text-primary-foreground transition-all rounded-none py-8 px-10 font-black uppercase italic text-xs cursor-pointer shadow-lg active:scale-95"
+                      >
+                        Rate Drop
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-2 opacity-30 grayscale">
+                        <X size={12} />
+                        <span className="text-[10px] font-black uppercase italic tracking-widest">Awaiting Logistics</span>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      {/* REVIEW MODAL - LIGHT INDUSTRIAL THEME */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-[200] bg-background/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-background border-2 border-foreground p-10 md:p-14 w-full max-w-xl space-y-10 shadow-2xl relative">
+            <button onClick={handleCloseModal} className="absolute top-6 right-6 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"><X size={30} /></button>
+            
+            <div className="text-center">
+              <h2 className="text-5xl font-black uppercase italic tracking-tighter leading-none mb-4">Post Feedback<span className="text-primary">.</span></h2>
+              <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.4em] italic">Verification Sequence 77-B</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              {/* Image Upload Area */}
+              <div className="space-y-4">
+                <p className="text-[9px] font-black uppercase text-foreground italic tracking-widest pl-1">Visual Log</p>
+                <div 
+                  onClick={triggerFileInput} 
+                  className="aspect-square w-full bg-muted/30 border border-dashed border-border flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-all group relative"
+                >
+                  {previewUrl ? (
+                    <img src={previewUrl} className="h-full w-full object-cover" alt="Preview" />
+                  ) : (
+                    <>
+                      <Upload className="text-muted-foreground group-hover:text-primary mb-3 transition-colors" size={32} />
+                      <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Attach Media</span>
+                    </>
+                  )}
+                </div>
+                <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileChange} className="hidden" />
+              </div>
+
+              {/* Rating & Text Area */}
+              <div className="flex flex-col justify-between">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <p className="text-[9px] font-black uppercase text-foreground italic tracking-widest">Stellar Rating</p>
+                    <div className="flex gap-2 text-primary">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star 
+                          key={s} 
+                          size={24}
+                          className={cn("cursor-pointer transition-all hover:scale-125", s <= rating ? "fill-current" : "text-muted border-none")} 
+                          onClick={() => setRating(s)} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[9px] font-black uppercase text-foreground italic tracking-widest">Written Context</p>
+                    <textarea 
+                      value={comment} 
+                      onChange={(e) => setComment(e.target.value)} 
+                      placeholder="DROP YOUR THOUGHTS ON THE FIT..." 
+                      className="w-full bg-muted/30 border border-border p-4 text-xs text-foreground font-medium italic outline-none focus:border-primary h-40 resize-none cursor-text" 
+                    />
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <p className="font-black text-xl mr-6">${parseFloat(item.price).toFixed(2)}</p>
-                {item.review_id ? (
-                  <Button disabled className="bg-zinc-900 text-zinc-600 border border-zinc-800 rounded-none uppercase font-black italic px-8 py-6 flex gap-2">
-                    <Check className="h-4 w-4" /> Review Posted
-                  </Button>
-                ) : (
-                  (item.status === 'Paid' || item.status === 'Completed') ? (
-                    <Button onClick={() => { setSelectedProduct(item); setShowReviewModal(true); }} className="bg-red-600 hover:bg-red-700 text-white rounded-none uppercase font-black italic px-8 py-6">Rate Drop</Button>
-                  ) : (
-                    <span className="text-[10px] text-zinc-700 font-black uppercase italic">Locked</span>
-                  )
-                )}
-              </div>
             </div>
-          ))}
-        </div>
-      </main>
 
-      {showReviewModal && (
-        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-[#0a0a0a] border border-zinc-900 p-8 w-full max-w-md space-y-8">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black uppercase italic">Post Review.</h2>
-              <button onClick={handleCloseModal}><X className="text-zinc-500 hover:text-white" /></button>
-            </div>
-            <div className="space-y-4 text-center">
-              <p className="text-[10px] font-black uppercase text-zinc-500">Visual Feedback</p>
-              <div onClick={triggerFileInput} className="h-32 w-full bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden cursor-pointer hover:border-red-600 transition-colors">
-                {previewUrl ? <img src={previewUrl} className="h-full object-contain" alt="Preview" /> : <Upload className="text-zinc-700" />}
-              </div>
-              <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileChange} className="hidden" />
-            </div>
-            <div className="flex gap-3 text-yellow-500 justify-center">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} className={`h-8 w-8 cursor-pointer ${s <= rating ? "fill-current" : "text-zinc-900"}`} onClick={() => setRating(s)} />
-              ))}
-            </div>
-            <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="DROP YOUR THOUGHTS..." className="w-full bg-black border border-zinc-900 p-4 text-sm text-white italic outline-none focus:border-red-600 h-32 resize-none" />
-            <div className="flex gap-4">
-              <Button onClick={handleCloseModal} variant="outline" className="flex-1 rounded-none border-zinc-800 text-zinc-500 uppercase font-black italic">Cancel</Button>
-              <Button disabled={isSubmitting} onClick={submitReview} className="flex-1 bg-white text-black hover:bg-red-600 hover:text-white rounded-none uppercase font-black italic">{isSubmitting ? <Loader2 className="animate-spin" /> : "Post Drop"}</Button>
+            <div className="flex gap-4 pt-6">
+              <Button onClick={handleCloseModal} variant="outline" className="flex-1 rounded-none border-border text-muted-foreground uppercase font-black italic py-8 cursor-pointer hover:bg-muted/50">Cancel</Button>
+              <Button 
+                disabled={isSubmitting} 
+                onClick={submitReview} 
+                className="flex-1 bg-foreground text-background hover:bg-primary hover:text-primary-foreground transition-all rounded-none py-8 font-black uppercase italic shadow-xl cursor-pointer"
+              >
+                {isSubmitting ? <Loader2 className="animate-spin" /> : <span className="flex items-center gap-2">Publish Log <ArrowRight size={16}/></span>}
+              </Button>
             </div>
           </div>
         </div>

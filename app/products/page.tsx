@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation"; // Thêm để đọc URL
+import { useSearchParams } from "next/navigation";
 import { Search, Loader2 } from "lucide-react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
 import { ChatButton } from "@/components/chat-button";
+import { cn } from "@/lib/utils";
 
 const categories = [
   { id: "all", name: "All Products" },
@@ -15,24 +16,20 @@ const categories = [
   { id: "pants", name: "Pants" },
 ];
 
-// Component nội dung chính của trang Shop
 function ShopContent() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   
-  // 1. Đọc tham số ?category= từ URL
   const searchParams = useSearchParams();
   const categoryFromUrl = searchParams.get("category") || "all";
   
   const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
 
-  // 2. Cập nhật selectedCategory mỗi khi URL thay đổi (Bấm từ Header)
   useEffect(() => {
     setSelectedCategory(categoryFromUrl);
   }, [categoryFromUrl]);
 
-  // 3. Lấy dữ liệu thật từ Database
   useEffect(() => {
     setLoading(true);
     fetch("/api/products")
@@ -49,7 +46,6 @@ function ShopContent() {
       });
   }, []);
 
-  // 4. Logic lọc sản phẩm kết hợp Tìm kiếm và Danh mục
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
@@ -57,15 +53,15 @@ function ShopContent() {
   });
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 bg-background">
       {/* Header trang Shop */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div>
-          <h1 className="text-5xl font-black uppercase italic tracking-tighter">
+          <h1 className="text-5xl font-black uppercase italic tracking-tighter text-foreground">
             {categories.find(c => c.id === selectedCategory)?.name || "Shop All"}.
           </h1>
           <p className="text-muted-foreground mt-2 italic font-medium">
-            Filtering by: <span className="text-red-600 uppercase font-bold">{selectedCategory}</span>
+            Filtering by: <span className="text-primary uppercase font-bold">{selectedCategory}</span>
           </p>
         </div>
 
@@ -76,22 +72,24 @@ function ShopContent() {
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#0a0a0a] border border-zinc-800 rounded-none text-white text-sm focus:border-red-600 outline-none"
+            // Thêm cursor-text cho ô nhập liệu
+            className="w-full pl-10 pr-4 py-3 bg-muted/20 border border-border rounded-none text-foreground text-sm focus:border-primary outline-none transition-all cursor-text placeholder:text-muted-foreground/50"
           />
         </div>
       </div>
 
-      {/* Bộ lọc danh mục (Local Filter) */}
-      <div className="flex flex-wrap gap-2 mb-12">
+      {/* Bộ lọc danh mục - Thêm cursor-pointer (hình bàn tay) */}
+      <div className="flex flex-wrap gap-3 mb-12">
         {categories.map((category) => (
           <button
             key={category.id}
             onClick={() => setSelectedCategory(category.id)}
-            className={`px-6 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
+            className={cn(
+              "px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all border italic cursor-pointer",
               selectedCategory === category.id
-                ? "bg-red-600 border-red-600 text-white"
-                : "bg-transparent border-zinc-800 text-zinc-500 hover:border-zinc-600"
-            }`}
+                ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20"
+                : "bg-transparent border-border text-muted-foreground hover:border-primary hover:text-primary"
+            )}
           >
             {category.name}
           </button>
@@ -100,13 +98,13 @@ function ShopContent() {
 
       {/* Danh sách sản phẩm */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-white">
-          <Loader2 className="h-10 w-10 animate-spin text-red-600 mb-4" />
-          <p className="text-xs font-bold uppercase italic tracking-widest animate-pulse">Syncing Database...</p>
+        <div className="flex flex-col items-center justify-center py-32 text-foreground">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-6" />
+          <p className="text-[10px] font-black uppercase italic tracking-[0.4em] animate-pulse">Syncing Inventory...</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12 animate-in fade-in duration-700">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={{
                 ...product,
@@ -118,8 +116,14 @@ function ShopContent() {
           </div>
 
           {filteredProducts.length === 0 && (
-            <div className="text-center py-20 border-2 border-dashed border-zinc-900">
-              <p className="text-zinc-600 italic uppercase font-bold text-xs tracking-widest">No items found in this category.</p>
+            <div className="text-center py-32 border border-dashed border-border bg-muted/5">
+              <p className="text-muted-foreground italic uppercase font-black text-xs tracking-[0.3em]">No drops found in this archive.</p>
+              <button 
+                onClick={() => setSelectedCategory("all")}
+                className="mt-6 text-[10px] font-black uppercase border-b-2 border-primary text-primary cursor-pointer hover:opacity-70 transition-opacity"
+              >
+                Clear Filters
+              </button>
             </div>
           )}
         </>
@@ -130,9 +134,14 @@ function ShopContent() {
 
 export default function ProductsPage() {
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       <Header />
-      <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-red-600" /></div>}>
+      {/* Cập nhật màu loader của Suspense */}
+      <Suspense fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="animate-spin text-primary h-10 w-10" />
+        </div>
+      }>
         <ShopContent />
       </Suspense>
       <Footer />

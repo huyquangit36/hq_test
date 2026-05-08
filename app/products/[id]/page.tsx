@@ -9,6 +9,7 @@ import { Footer } from "@/components/footer";
 import { ChatButton } from "@/components/chat-button";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -21,6 +22,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [user, setUser] = useState<any>(null);
   const [newQuestion, setNewQuestion] = useState("");
   const [isPosting, setIsPosting] = useState(false);
+
+  
 
   const ALL_SIZES = ["S", "M", "L", "XL"];
 
@@ -37,6 +40,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       
       if (!prodData.error) {
         setProduct(prodData);
+        // Tự động chọn size đầu tiên còn hàng
         const firstAvailableSize = ALL_SIZES.find(s => (prodData.size_stocks?.[s] || 0) > 0);
         if (firstAvailableSize) setSelectedSize(firstAvailableSize);
       }
@@ -54,24 +58,30 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     if (storedUser) setUser(JSON.parse(storedUser));
     fetchData();
   }, [id]);
+  
 
   const addToCart = () => {
     if (!product) return;
 
-    const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    
-    const stockForSelectedSize = product.size_stocks?.[selectedSize] || 0;
+    if (!user) {
+    toast.error("SESSION EXPIRED OR MISSING", {
+      description: "Please authorize your account to add items to your drop.",
+      style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
+    });
+    return;
+  }
 
+    const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const stockForSelectedSize = product.size_stocks?.[selectedSize] || 0;
     const existingItemIndex = currentCart.findIndex(
       (item: any) => item.id === product.id && item.size === selectedSize
     );
-
     const quantityInCart = existingItemIndex > -1 ? currentCart[existingItemIndex].quantity : 0;
 
     if (quantityInCart + 1 > stockForSelectedSize) {
       toast.error("OUT OF STOCK", {
         description: `Size ${selectedSize} currently has only ${stockForSelectedSize} items available.`,
-        style: { background: '#000', color: '#fff', border: '1px solid #27272a' }
+        style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--destructive)' }
       });
       return;
     }
@@ -80,13 +90,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       currentCart[existingItemIndex].quantity += 1;
     } else {
       currentCart.push({ 
-        id: product.id, 
-        name: product.name, 
-        price: product.price, 
-        image: product.image_url, 
-        size: selectedSize, 
-        quantity: 1,
-        stock: stockForSelectedSize 
+        id: product.id, name: product.name, price: product.price, 
+        image: product.image_url, size: selectedSize, quantity: 1, stock: stockForSelectedSize 
       });
     }
 
@@ -94,17 +99,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     window.dispatchEvent(new Event("cart-updated"));
 
     toast.success("ADDED TO BAG", {
-      description: `${product.name} - Size ${selectedSize} is ready.`,
-      style: { background: '#000', color: '#fff', border: '1px solid #27272a' }
+      description: `${product.name} - Size ${selectedSize} is ready for checkout.`,
+      style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
     });
   };
 
   const handlePostQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error("LOGIN REQUIRED", {
-        description: "Please log in to ask a question.",
-      });
+      toast.error("LOGIN REQUIRED", { description: "Please log in to ask a question." });
       return;
     }
     setIsPosting(true);
@@ -115,62 +118,65 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     if (res.ok) {
       setNewQuestion("");
       fetchData();
-      toast.success("QUESTION POSTED", {
-        description: "Your inquiry has been sent to the HQ team.",
-      });
+      toast.success("QUESTION POSTED", { description: "Your inquiry has been sent to the HQ team." });
     }
     setIsPosting(false);
   };
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen bg-black"><Loader2 className="animate-spin text-red-600" /></div>;
-  if (!product) return <div className="p-20 text-center text-white bg-black min-h-screen uppercase font-black italic">Product not found.</div>;
+  if (loading) return <div className="flex justify-center items-center min-h-screen bg-background"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>;
+  if (!product) return <div className="p-20 text-center text-foreground bg-background min-h-screen uppercase font-black italic">Product not found.</div>;
 
   const isOutOfStock = !ALL_SIZES.some(s => (product.size_stocks?.[s] || 0) > 0);
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
-      <Toaster position="top-center" theme="dark" closeButton />
+    <div className="min-h-screen bg-background text-foreground font-sans">
+      <Toaster position="top-center" theme="light" closeButton />
       <Header />
+      
       <main className="max-w-7xl mx-auto px-4 py-24">
-        <Link href="/products" className="flex items-center gap-2 text-zinc-500 hover:text-white mb-10 transition-colors uppercase text-xs font-black tracking-widest">
+        <Link href="/products" className="flex items-center gap-2 text-muted-foreground hover:text-primary mb-10 transition-colors uppercase text-[10px] font-black tracking-widest cursor-pointer">
           <ArrowLeft className="h-4 w-4" /> Back to collection
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
-          <div className="relative aspect-square bg-zinc-950 border border-zinc-900 overflow-hidden">
+          {/* PRODUCT IMAGE */}
+          <div className="relative aspect-square bg-muted border border-border overflow-hidden group">
             <Image 
               src={product.image_url || "/products/tee-1.jpg"} 
               alt={product.name} 
               fill 
-              className="object-cover hover:scale-110 transition-transform duration-1000" 
+              className="object-cover transition-transform duration-1000 group-hover:scale-105" 
             />
             {isOutOfStock && (
-              <div className="absolute inset-0 bg-black/60 z-10 flex items-center justify-center">
-                <span className="border border-white px-6 py-3 text-white font-black italic uppercase text-2xl tracking-tighter">Sold Out</span>
+              <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center backdrop-blur-[2px]">
+                <span className="border-2 border-foreground px-8 py-4 text-foreground font-black italic uppercase text-3xl tracking-tighter">Sold Out</span>
               </div>
             )}
           </div>
 
+          {/* PRODUCT INFO */}
           <div className="flex flex-col justify-center space-y-10">
             <div>
-              <span className="text-red-600 font-black uppercase tracking-[0.4em] text-[10px] italic">Authentic Drop.</span>
-              <h1 className="text-6xl font-black uppercase italic tracking-tighter mt-4 leading-none">{product.name}</h1>
-              <p className="text-5xl font-black italic text-red-600 mt-6 tracking-tighter">${parseFloat(product.price).toFixed(2)}</p>
-              <div className="flex items-center gap-4 mt-4 text-[10px] font-black uppercase tracking-widest italic">
-                 <p className="text-zinc-500">Color: {product.color || "Standard"}</p>
-                 <span className="h-1 w-1 rounded-full bg-zinc-800" />
-                 <p className={product.size_stocks?.[selectedSize] > 0 ? "text-green-500" : "text-red-600"}>
-                   {selectedSize}: {product.size_stocks?.[selectedSize] || 0} left
+              <span className="text-primary font-black uppercase tracking-[0.4em] text-[10px] italic">Authentic Drop.</span>
+              <h1 className="text-6xl font-black uppercase italic tracking-tighter mt-4 leading-none text-foreground">{product.name}</h1>
+              <p className="text-5xl font-black italic text-foreground mt-6 tracking-tighter">${parseFloat(product.price).toFixed(2)}</p>
+              
+              <div className="flex items-center gap-4 mt-6 text-[10px] font-black uppercase tracking-widest italic border-l-2 border-primary pl-4">
+                 <p className="text-muted-foreground">Color: {product.color || "Standard"}</p>
+                 <span className="h-1 w-1 rounded-full bg-border" />
+                 <p className={product.size_stocks?.[selectedSize] > 0 ? "text-primary" : "text-destructive"}>
+                   {selectedSize}: {product.size_stocks?.[selectedSize] || 0} units left
                  </p>
               </div>
             </div>
             
-            <div className="space-y-4 text-zinc-400 leading-relaxed italic text-sm max-w-md">
+            <p className="text-muted-foreground leading-relaxed italic text-sm max-w-md">
               {product.description || "Premium streetwear piece crafted for the culture. High quality materials and modern fit."}
-            </div>
+            </p>
 
+            {/* SIZE SELECTOR */}
             <div className="space-y-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Select Size</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Select Size</p>
               <div className="flex gap-4">
                 {ALL_SIZES.map((size) => {
                   const sizeStock = product.size_stocks?.[size] || 0;
@@ -178,17 +184,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     <button 
                       key={size} 
                       onClick={() => setSelectedSize(size)} 
-                      className={`w-14 h-14 border flex flex-col items-center justify-center font-black transition-all relative ${
+                      disabled={sizeStock <= 0}
+                      className={cn(
+                        "w-14 h-14 border flex flex-col items-center justify-center font-black transition-all relative cursor-pointer",
                         selectedSize === size 
-                        ? "border-red-600 bg-red-600 text-white" 
-                        : sizeStock > 0 
-                          ? "border-zinc-800 text-zinc-600 hover:border-zinc-400"
-                          : "border-zinc-900 text-zinc-800 cursor-not-allowed opacity-30"
-                      }`}
+                          ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
+                          : sizeStock > 0 
+                            ? "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                            : "border-muted bg-muted/50 text-muted-foreground/30 cursor-not-allowed"
+                      )}
                     >
                       <span className="text-xs">{size}</span>
                       {sizeStock <= 5 && sizeStock > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-white text-black text-[7px] px-1">LOW</span>
+                        <span className="absolute -top-1 -right-1 bg-foreground text-background text-[7px] px-1 font-bold">LOW</span>
                       )}
                     </button>
                   );
@@ -196,108 +204,107 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
 
+            {/* ADD TO BAG BUTTON */}
             <Button 
               onClick={addToCart} 
               disabled={isOutOfStock || (product.size_stocks?.[selectedSize] || 0) <= 0}
-              className={`w-full py-10 text-xl font-black uppercase italic rounded-none flex gap-4 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)] ${
+              className={cn(
+                "w-full py-10 text-xl font-black uppercase italic rounded-none flex gap-4 transition-all active:scale-95 cursor-pointer",
                 isOutOfStock || (product.size_stocks?.[selectedSize] || 0) <= 0
-                ? "bg-zinc-900 text-zinc-600 cursor-not-allowed" 
-                : "bg-white text-black hover:bg-red-600 hover:text-white"
-              }`}
+                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border" 
+                : "bg-foreground text-background hover:bg-primary hover:text-primary-foreground shadow-xl"
+              )}
             >
               {(product.size_stocks?.[selectedSize] || 0) > 0 ? (
                 <>
                   <ShoppingBag className="h-6 w-6" /> Add to bag
                 </>
               ) : (
-                "Out of Stock in this size"
+                "Out of Stock"
               )}
             </Button>
           </div>
         </div>
 
-        <div className="mt-16 md:mt-32 border-t border-zinc-900 pt-20">
+        {/* REVIEWS SECTION */}
+        <div className="mt-32 border-t border-border pt-20">
           <div className="flex justify-between items-end mb-16">
             <div>
-              <h2 className="text-4xl font-black uppercase italic tracking-tighter">Community Feedback<span className="text-red-600">.</span></h2>
-              <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-2">Verified purchase reviews from the pack</p>
+              <h2 className="text-4xl font-black uppercase italic tracking-tighter">Community Feedback<span className="text-primary">.</span></h2>
+              <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest mt-2 italic">Verified purchase reviews from the pack</p>
             </div>
-            <div className="text-right hidden md:block">
-               <p className="text-sm font-black italic">{reviews.length} Feedbacks</p>
-            </div>
+            <p className="text-sm font-black italic text-foreground hidden md:block">{reviews.length} Feedbacks</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {reviews.map((rev) => (
-              <div key={rev.id} className="bg-zinc-950 border border-zinc-900 p-8 space-y-6">
+              <div key={rev.id} className="bg-card border border-border p-8 space-y-6 shadow-sm">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-zinc-800 flex items-center justify-center rounded-full uppercase font-black text-xs italic text-red-600">{rev.full_name.charAt(0)}</div>
+                    <div className="h-10 w-10 bg-muted border border-border flex items-center justify-center font-black text-xs italic text-primary">{rev.full_name.charAt(0)}</div>
                     <div>
-                      <p className="text-sm font-black uppercase italic text-white">{rev.full_name}</p>
-                      <p className="text-[9px] text-zinc-700 font-black uppercase tracking-widest">Verified Member</p>
+                      <p className="text-sm font-black uppercase italic text-foreground">{rev.full_name}</p>
+                      <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Verified Member</p>
                     </div>
                   </div>
-                  <div className="flex text-red-600">
-                    {[...Array(5)].map((_, i) => <Star key={i} className={`h-3 w-3 ${i < rev.rating ? "fill-current" : "text-zinc-900"}`} />)}
+                  <div className="flex text-primary">
+                    {[...Array(5)].map((_, i) => <Star key={i} size={12} className={i < rev.rating ? "fill-current" : "text-muted"} />)}
                   </div>
                 </div>
-                
-                {rev.image_url && (
-                  <div onClick={() => setSelectedImage(rev.image_url)} className="relative h-48 w-full bg-zinc-900 border border-zinc-800 overflow-hidden cursor-zoom-in group">
-                    <img src={rev.image_url} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" alt="Review" />
-                  </div>
-                )}
-
-                <p className="text-zinc-400 text-sm italic leading-relaxed pl-2 border-l-2 border-red-600">"{rev.comment}"</p>
-                <p className="text-[8px] text-zinc-800 font-black uppercase tracking-[0.3em] text-right">{new Date(rev.created_at).toLocaleDateString()}</p>
+                <p className="text-foreground text-sm italic leading-relaxed pl-4 border-l-2 border-primary">"{rev.comment}"</p>
+                <p className="text-[8px] text-muted-foreground font-black uppercase tracking-[0.3em] text-right">{new Date(rev.created_at).toLocaleDateString()}</p>
               </div>
             ))}
           </div>
-
           {reviews.length === 0 && (
-            <div className="py-20 text-center border-2 border-dashed border-zinc-900 mb-20">
-              <p className="text-zinc-600 italic uppercase text-xs font-bold tracking-widest">No feedbacks yet.</p>
+            <div className="py-20 text-center border border-dashed border-border bg-muted/5">
+              <p className="text-muted-foreground italic uppercase text-xs font-bold tracking-widest">No feedbacks yet.</p>
             </div>
           )}
         </div>
 
-        <div className="mt-16 md:mt-32 border-t border-zinc-900 pt-20">
+        {/* INQUIRY HUB */}
+        <div className="mt-32 border-t border-border pt-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
             <div className="lg:col-span-4 space-y-8">
-               <h2 className="text-4xl font-black uppercase italic tracking-tighter">Inquiry Hub<span className="text-red-600">.</span></h2>
-               <p className="text-zinc-500 text-xs font-bold uppercase italic tracking-widest leading-relaxed">Have a question about fit or material? Ask the pack directly.</p>
-               
-               <form onSubmit={handlePostQuestion} className="space-y-4 bg-zinc-950 p-2 md:p-6 border border-zinc-900">
-                  <textarea value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} placeholder="WHAT'S ON YOUR MIND?" className="w-full bg-black border border-zinc-800 p-4 text-xs font-bold text-white italic outline-none focus:border-red-600 h-32 resize-none" required />
-                  <Button disabled={isPosting} type="submit" className="w-full bg-red-600 text-white rounded-none font-black uppercase italic py-6 hover:bg-red-700 transition-all">
+               <h2 className="text-4xl font-black uppercase italic tracking-tighter">Inquiry Hub<span className="text-primary">.</span></h2>
+               <p className="text-muted-foreground text-xs font-bold uppercase italic tracking-widest leading-relaxed">Ask the pack about fit or material.</p>
+               <form onSubmit={handlePostQuestion} className="space-y-4 bg-muted/30 p-6 border border-border">
+                  <textarea 
+                    value={newQuestion} 
+                    onChange={(e) => setNewQuestion(e.target.value)} 
+                    placeholder="WHAT'S ON YOUR MIND?" 
+                    className="w-full bg-background border border-border p-4 text-xs font-bold text-foreground italic outline-none focus:border-primary h-32 resize-none cursor-text" 
+                    required 
+                  />
+                  <Button disabled={isPosting} type="submit" className="w-full bg-primary text-primary-foreground rounded-none font-black uppercase italic py-7 hover:bg-foreground hover:text-background transition-all cursor-pointer">
                     {isPosting ? <Loader2 className="animate-spin h-4 w-4" /> : "Post Inquiry"}
                   </Button>
                </form>
             </div>
 
             <div className="lg:col-span-8 space-y-12">
-               <p className="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em] italic border-b border-zinc-900 pb-4">{questions.length} Conversations</p>
+               <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] italic border-b border-border pb-4">{questions.length} Conversations</p>
                <div className="space-y-12">
                   {questions.map((q) => (
-                    <div key={q.id} className="space-y-4">
+                    <div key={q.id} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
                        <div className="flex items-start gap-4">
-                          <div className="h-10 w-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center font-black text-red-600 text-xs italic">{q.full_name.charAt(0)}</div>
+                          <div className="h-10 w-10 bg-background border border-border flex items-center justify-center font-black text-primary text-xs italic">{q.full_name.charAt(0)}</div>
                           <div className="flex-1">
-                             <div className="flex items-center gap-4 mb-1">
-                                <p className="text-sm font-black uppercase italic text-white">{q.full_name}</p>
-                                <span className="text-[8px] text-zinc-700 font-bold uppercase">{new Date(q.created_at).toLocaleDateString()}</span>
+                             <div className="flex items-center gap-4 mb-2">
+                                <p className="text-sm font-black uppercase italic text-foreground">{q.full_name}</p>
+                                <span className="text-[8px] text-muted-foreground font-bold uppercase">{new Date(q.created_at).toLocaleDateString()}</span>
                              </div>
-                             <p className="text-zinc-400 text-sm italic leading-relaxed">"{q.content}"</p>
+                             <p className="text-muted-foreground text-sm italic leading-relaxed">"{q.content}"</p>
                           </div>
                        </div>
                        {q.is_answered && (
-                         <div className="ml-14 bg-zinc-900/30 border-l-2 border-red-600 p-6 space-y-2 animate-in slide-in-from-left-2">
+                         <div className="ml-14 bg-muted/50 border-l-2 border-primary p-6 space-y-2">
                             <div className="flex items-center gap-2">
-                               <UserCheck size={12} className="text-red-600" />
-                               <p className="text-[10px] font-black uppercase text-white tracking-widest">HQ Official Response</p>
+                               <UserCheck size={12} className="text-primary" />
+                               <p className="text-[10px] font-black uppercase text-foreground tracking-widest">HQ Official Response</p>
                             </div>
-                            <p className="text-sm text-white italic font-bold">"{q.reply_content}"</p>
+                            <p className="text-sm text-foreground italic font-bold">"{q.reply_content}"</p>
                          </div>
                        )}
                     </div>
@@ -308,10 +315,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </main>
 
+      {/* LIGHTBOX FOR IMAGES */}
       {selectedImage && (
-        <div className="fixed inset-0 z-[1000] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setSelectedImage(null)}>
-          <button className="absolute top-10 right-10 text-white hover:text-red-600 transition-colors"><X className="h-10 w-10" /></button>
-          <img src={selectedImage} className="max-w-full max-h-full object-contain shadow-2xl animate-in zoom-in-95 duration-300" alt="Full View" />
+        <div className="fixed inset-0 z-[1000] bg-white/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setSelectedImage(null)}>
+          <button className="absolute top-10 right-10 text-foreground hover:text-primary transition-colors cursor-pointer"><X size={40} /></button>
+          <img src={selectedImage} className="max-w-full max-h-full object-contain shadow-2xl animate-in zoom-in-95 duration-300 border border-border" alt="View" />
         </div>
       )}
 

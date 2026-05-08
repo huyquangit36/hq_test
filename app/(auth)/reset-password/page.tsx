@@ -4,7 +4,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, Eye, EyeOff, XCircle, Check } from "lucide-react";
+import { Loader2, CheckCircle2, Eye, EyeOff, XCircle, Check, ArrowRight, ShieldCheck } from "lucide-react";
+import { toast, Toaster } from "sonner";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -18,7 +19,6 @@ function ResetPasswordForm() {
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // 1. KIỂM TRA TOKEN KHI VỪA VÀO TRANG
   useEffect(() => {
     if (!token) {
         setIsValidToken(false);
@@ -32,11 +32,10 @@ function ResetPasswordForm() {
       .catch(() => setIsValidToken(false));
   }, [token]);
 
-  // 2. THUẬT TOÁN KIỂM TRA (SỬA LẠI CHUẨN XÁC)
   const hasLength = password.length >= 8;
-  const hasUpper = /[A-Z]/.test(password); // Kiểm tra chữ HOA
-  const hasLower = /[a-z]/.test(password); // Kiểm tra chữ thường
-  const hasNumber = /[0-9]/.test(password); // Kiểm tra số
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
   const isMatch = password === confirmPassword && confirmPassword !== "";
 
   const canSubmit = hasLength && hasUpper && hasLower && hasNumber && isMatch;
@@ -53,10 +52,17 @@ function ResetPasswordForm() {
         body: JSON.stringify({ token, password })
       });
 
-      if (res.ok) setSuccess(true);
-      else alert("Lỗi: Link không hợp lệ hoặc đã hết hạn.");
+      if (res.ok) {
+        setSuccess(true);
+        toast.success("CREDENTIALS UPDATED", {
+            description: "Your password has been successfully reset.",
+            style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
+        });
+      } else {
+        toast.error("INVALID SESSION", { description: "The reset link is expired or invalid." });
+      }
     } catch (err) {
-      alert("Lỗi kết nối.");
+      toast.error("CONNECTION ERROR");
     } finally {
       setLoading(false);
     }
@@ -64,91 +70,104 @@ function ResetPasswordForm() {
 
   if (isValidToken === false) {
     return (
-      <div className="text-center space-y-8 animate-in fade-in duration-700">
-        <XCircle className="h-24 w-24 text-red-600 opacity-20 mx-auto" />
-        <h1 className="text-4xl font-black uppercase italic text-white text-center">Invalid Link.</h1>
-        <div className="flex justify-center">
-            <Button onClick={() => router.push("/")} className="bg-white text-black rounded-none uppercase font-black italic px-12 py-8">Return to HQ.</Button>
-        </div>
+      <div className="w-full max-w-xl bg-background border border-border p-12 text-center space-y-8 shadow-2xl shadow-primary/5 animate-in fade-in zoom-in-95">
+        <XCircle className="h-24 w-24 text-destructive/20 mx-auto" />
+        <h1 className="text-5xl font-black uppercase italic text-foreground tracking-tighter">Link Expired.</h1>
+        <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest italic">The recovery transmission is no longer valid.</p>
+        <Button onClick={() => router.push("/login")} className="bg-foreground text-background hover:bg-primary transition-all rounded-none font-black uppercase italic px-12 py-8 cursor-pointer shadow-lg">Return to Login</Button>
       </div>
     );
   }
 
   if (success) {
     return (
-      <div className="w-full max-w-sm bg-zinc-950 border border-zinc-900 p-12 text-center space-y-8 animate-in zoom-in">
-        <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
-        <h2 className="text-3xl font-black uppercase italic text-white">Success.</h2>
-        <Button onClick={() => router.push("/login")} className="bg-white text-black w-full rounded-none font-black uppercase italic py-8">Login Now</Button>
+      <div className="w-full max-w-xl bg-background border border-border p-12 text-center space-y-8 shadow-2xl shadow-primary/5 animate-in zoom-in-95 duration-500">
+        <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto border border-primary/20">
+            <CheckCircle2 className="h-10 w-10 text-primary" />
+        </div>
+        <h2 className="text-5xl font-black uppercase italic text-foreground tracking-tighter">Success.</h2>
+        <p className="text-muted-foreground text-[10px] font-black uppercase tracking-widest italic">Your HQ identity has been secured.</p>
+        <Button onClick={() => router.push("/login")} className="bg-foreground text-background hover:bg-primary w-full rounded-none font-black uppercase italic py-8 cursor-pointer shadow-lg">Authorize Login</Button>
       </div>
     );
   }
 
-  if (isValidToken === null) return <div className="flex justify-center"><Loader2 className="animate-spin text-red-600 h-10 w-10" /></div>;
+  if (isValidToken === null) return <div className="flex flex-col items-center gap-4"><Loader2 className="animate-spin text-primary h-12 w-12" /><p className="text-[10px] font-black uppercase italic text-muted-foreground tracking-[0.5em]">Verifying Link...</p></div>;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 w-full max-w-md bg-zinc-950 border border-zinc-900 p-10 shadow-2xl">
-      <div className="text-center">
-        <h1 className="text-4xl font-black uppercase italic tracking-tighter text-white">New Credentials.</h1>
-        <p className="text-zinc-500 text-[10px] uppercase font-bold mt-2 italic tracking-[0.3em] border-b border-zinc-900 pb-4">Security Protocol 09-X</p>
+    <form onSubmit={handleSubmit} className="w-full max-w-xl bg-background border border-border p-10 md:p-14 shadow-2xl shadow-primary/5 animate-in fade-in slide-in-from-top-4 duration-700">
+      <div className="text-center mb-12">
+        <h1 className="text-5xl md:text-6xl font-black uppercase italic tracking-tighter text-foreground leading-none">New<br />Credentials<span className="text-primary">.</span></h1>
+        <p className="text-muted-foreground text-[10px] font-black uppercase mt-4 italic tracking-[0.3em] border-b border-border pb-4">Security Protocol 09-X</p>
       </div>
 
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <label className="text-[9px] font-black uppercase text-zinc-500 tracking-widest pl-1">New Password</label>
+      <div className="space-y-8">
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase text-foreground tracking-widest pl-1 italic">New Password</label>
           <div className="relative">
             <input 
               type={showPass ? "text" : "password"} 
-              className="w-full bg-black border border-zinc-800 p-4 pr-12 text-xs font-bold text-white focus:border-red-600 outline-none transition-all tracking-widest"
+              className="w-full bg-muted/20 border border-border p-4 pr-12 text-sm font-medium text-foreground outline-none focus:border-primary transition-none cursor-text relative z-10"
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
               required 
+              autoComplete="new-password"
             />
-            <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors">
-              {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+            <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 text-muted-foreground hover:text-primary cursor-pointer transition-colors p-1">
+              {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
 
-        {/* CỘT ĐIỀU KIỆN - ĐÃ SỬA THỨ TỰ NHÃN CHUẨN */}
-        <div className="grid grid-cols-2 gap-y-3 gap-x-4 bg-black/50 p-4 border border-zinc-900/50">
+        {/* ĐIỀU KIỆN MẬT KHẨU - TÔNG MÀU MINT/NAVY */}
+        <div className="grid grid-cols-2 gap-y-4 gap-x-6 bg-muted/30 p-6 border border-border">
            <CheckItem label="8+ Characters" valid={hasLength} />
            <CheckItem label="Uppercase (A-Z)" valid={hasUpper} />
            <CheckItem label="Lowercase (a-z)" valid={hasLower} />
            <CheckItem label="Numbers (0-9)" valid={hasNumber} />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-[9px] font-black uppercase text-zinc-500 tracking-widest pl-1">Confirm Identity</label>
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase text-foreground tracking-widest pl-1 italic">Confirm Identity</label>
           <input 
             type="password" 
-            className="w-full bg-black border border-zinc-800 p-4 text-xs font-bold text-white focus:border-red-600 outline-none transition-all uppercase tracking-widest"
+            className="w-full bg-muted/20 border border-border p-4 text-sm font-medium text-foreground outline-none focus:border-primary transition-none cursor-text"
             value={confirmPassword} 
             onChange={(e) => setConfirmPassword(e.target.value)} 
             required 
+            autoComplete="new-password"
           />
-        </div>
-
-        {/* PASSWORDS MATCH - NẰM DƯỚI CONFIRM THEO YÊU CẦU */}
-        <div className="pl-1">
-           <CheckItem label="Passwords Match" valid={isMatch} />
+          <div className="pt-2">
+            <CheckItem label="Passwords Match" valid={isMatch} />
+          </div>
         </div>
       </div>
 
       <Button 
         disabled={loading || !canSubmit} 
-        className="w-full bg-red-600 text-white hover:bg-red-700 py-10 rounded-none font-black uppercase italic transition-all disabled:opacity-20 disabled:grayscale"
+        className="w-full mt-10 bg-foreground text-background hover:bg-primary hover:text-primary-foreground py-10 rounded-none font-black uppercase italic text-sm transition-all shadow-xl cursor-pointer disabled:opacity-30 group"
       >
-        {loading ? <Loader2 className="animate-spin" /> : "Authorize Change"}
+        {loading ? (
+            <Loader2 className="animate-spin size-6" />
+        ) : (
+            <span className="flex items-center gap-3">Authorize Change <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" /></span>
+        )}
       </Button>
+
+      <div className="mt-8 flex justify-center gap-6 opacity-30">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={14} />
+            <span className="text-[8px] font-black uppercase tracking-widest">SSL Encrypted Recovery</span>
+          </div>
+      </div>
     </form>
   );
 }
 
 function CheckItem({ label, valid }: { label: string, valid: boolean }) {
   return (
-    <div className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-tighter transition-all duration-300 ${valid ? 'text-green-500' : 'text-zinc-800'}`}>
-      {valid ? <Check size={10} strokeWidth={5} /> : <div className="w-[10px] h-[10px] border border-zinc-900" />}
+    <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter transition-all duration-300 ${valid ? 'text-primary' : 'text-muted-foreground/30'}`}>
+      {valid ? <Check size={12} strokeWidth={5} /> : <div className="w-[10px] h-[10px] border-2 border-muted-foreground/20" />}
       {label}
     </div>
   );
@@ -156,14 +175,13 @@ function CheckItem({ label, valid }: { label: string, valid: boolean }) {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
-      <Header />
-      <main className="flex-1 flex items-center justify-center p-6">
-        <Suspense fallback={<Loader2 className="animate-spin text-red-600" />}>
+    <div className="bg-background text-foreground flex flex-col font-sans">
+      <Toaster position="top-center" theme="light" />
+      <main className="flex-1 flex flex-col items-center justify-center p-6">
+        <Suspense fallback={<div className="flex flex-col items-center gap-4"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>}>
           <ResetPasswordForm />
         </Suspense>
       </main>
-      <Footer />
     </div>
   );
 }

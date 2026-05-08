@@ -11,12 +11,12 @@ export async function POST(req: Request) {
     const user = result.rows[0];
 
     if (!user) {
-      return NextResponse.json({ error: "Email không tồn tại" }, { status: 401 });
+      return NextResponse.json({ error: "Email does not exist" }, { status: 401 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
-      return NextResponse.json({ error: "Mật khẩu không chính xác" }, { status: 401 });
+      return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
     }
 
     const token = jwt.sign(
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     );
 
     return NextResponse.json({
-      message: "Đăng nhập thành công",
+      message: "Login successful",
       token,
       user: {
         id: user.id,
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    console.error("Lỗi đăng nhập:", error);
-    return NextResponse.json({ error: "Lỗi hệ thống" }, { status: 500 });
+    console.error("Login error:", error);
+    return NextResponse.json({ error: "System error" }, { status: 500 });
   }
 }
