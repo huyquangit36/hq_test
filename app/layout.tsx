@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Space_Grotesk, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next' // Đã sửa lỗi: thêm dấu gạch chéo
 import './globals.css'
+import { Toaster } from "sonner";
 
 // Cấu hình font Sans chính (dùng cho tiêu đề, các nút bấm)
 const spaceGrotesk = Space_Grotesk({ 
@@ -43,10 +44,12 @@ export default function RootLayout({
 }>) {
   return (
     // Ép buộc giao diện sáng cho trình duyệt
-    <html lang="en" className="bg-background scroll-smooth" style={{ colorScheme: 'light' }}>
+    <html lang="en" className="bg-background " data-scroll-behavior="smooth" style={{ colorScheme: 'light' }}>
       <body className={`${spaceGrotesk.variable} ${inter.variable} font-sans antialiased bg-background text-foreground`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
+                <Toaster position="top-center" theme="light" closeButton />
+
       </body>
     </html>
   )

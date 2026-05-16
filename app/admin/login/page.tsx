@@ -51,7 +51,6 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 font-sans">
-      <Toaster position="top-center" theme="light" />
       
       <div className="w-full max-w-xl animate-in fade-in zoom-in-95 duration-700">
         <div className="text-center mb-12">

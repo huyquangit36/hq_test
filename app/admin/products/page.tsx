@@ -141,7 +141,6 @@ export default function AdminProductsPage() {
   return (
     <>
       <div className="w-full max-w-[1400px] mx-auto space-y-10 py-6 px-4 animate-in fade-in duration-1000">
-        <Toaster position="top-center" theme="light" />
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b-2 border-border pb-10">
           <div className="space-y-1">

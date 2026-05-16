@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Search, ChevronDown, ShoppingBag, ChevronLeft, ChevronRight, Hash } from "lucide-react";
-import { toast, Toaster } from "sonner";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -82,7 +83,6 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="w-[95%] lg:w-[90%] mx-auto space-y-10 py-10 animate-in fade-in duration-1000">
-      <Toaster position="top-center" theme="light" closeButton />
 
       {/* PAGE HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b-2 border-border pb-10">

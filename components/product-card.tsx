@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBag, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast, Toaster } from "sonner";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   product: {
@@ -78,9 +78,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const isMOutOfStock = (product.size_stocks?.M || 0) <= 0;
 
   return (
-    <div className="group relative bg-background border border-border overflow-hidden transition-all duration-500 hover:border-primary/50">
-      <Toaster position="top-center" theme="light" />
-      
+    <div className="group relative bg-background border border-border overflow-hidden transition-all duration-500 hover:border-primary/50">      
       <Link href={`/products/${product.id}`} className="cursor-pointer">
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           <Image

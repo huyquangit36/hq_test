@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ChatButton } from "@/components/chat-button";
-import { toast, Toaster } from "sonner";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -130,7 +131,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <Toaster position="top-center" theme="light" closeButton />
       <Header />
       
       <main className="max-w-7xl mx-auto px-4 py-24">

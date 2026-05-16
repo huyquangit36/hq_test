@@ -5,7 +5,8 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, Eye, EyeOff, XCircle, Check, ArrowRight, ShieldCheck } from "lucide-react";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
+
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -176,7 +177,6 @@ function CheckItem({ label, valid }: { label: string, valid: boolean }) {
 export default function ResetPasswordPage() {
   return (
     <div className="bg-background text-foreground flex flex-col font-sans">
-      <Toaster position="top-center" theme="light" />
       <main className="flex-1 flex flex-col items-center justify-center p-6">
         <Suspense fallback={<div className="flex flex-col items-center gap-4"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>}>
           <ResetPasswordForm />

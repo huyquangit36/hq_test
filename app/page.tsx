@@ -9,7 +9,8 @@ import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
 import { ChatButton } from "@/components/chat-button";
 import { subscribeAction } from "@/app/actions/subscribe";
-import { toast, Toaster } from "sonner"; // Sử dụng Toaster dạng bảng web
+import { toast } from "sonner";
+
 
 export default function LandingPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -62,9 +63,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-white">
-      {/* COMPONENT THÔNG BÁO DẠNG BẢNG */}
-      <Toaster position="top-center" theme="light" />
-      
+      {/* COMPONENT THÔNG BÁO DẠNG BẢNG */}      
       <Header />
 
       {/* HERO SECTION - CHUYỂN SANG TÔNG SÁNG */}

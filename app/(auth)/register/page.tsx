@@ -102,7 +102,6 @@ export default function RegisterPage() {
   return (
     
     <div className="w-full max-w-xl px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <Toaster position="top-center" theme="light" />
       
       {/* Container chính - Nền trắng Mint nhạt */}
       <div className="bg-background border border-border rounded-none p-8 md:p-12 shadow-2xl shadow-primary/5">

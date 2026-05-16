@@ -41,7 +41,7 @@ function ShopContent() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Lỗi fetch sản phẩm:", err);
+        console.error("Fetch error:", err);
         setLoading(false);
       });
   }, []);
@@ -54,31 +54,28 @@ function ShopContent() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 bg-background">
-      {/* Header trang Shop */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div>
           <h1 className="text-5xl font-black uppercase italic tracking-tighter text-foreground">
             {categories.find(c => c.id === selectedCategory)?.name || "Shop All"}.
           </h1>
           <p className="text-muted-foreground mt-2 italic font-medium">
-            Filtering by: <span className="text-primary uppercase font-bold">{selectedCategory}</span>
+            Archive Sector: <span className="text-primary uppercase font-bold">{selectedCategory}</span>
           </p>
         </div>
 
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder="SEARCH ARCHIVE..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            // Thêm cursor-text cho ô nhập liệu
-            className="w-full pl-10 pr-4 py-3 bg-muted/20 border border-border rounded-none text-foreground text-sm focus:border-primary outline-none transition-all cursor-text placeholder:text-muted-foreground/50"
+            className="w-full pl-12 pr-4 py-3 bg-muted/20 border border-border rounded-none text-foreground text-sm focus:border-primary outline-none transition-all cursor-text placeholder:text-muted-foreground/40 font-bold italic"
           />
         </div>
       </div>
 
-      {/* Bộ lọc danh mục - Thêm cursor-pointer (hình bàn tay) */}
       <div className="flex flex-wrap gap-3 mb-12">
         {categories.map((category) => (
           <button
@@ -96,7 +93,6 @@ function ShopContent() {
         ))}
       </div>
 
-      {/* Danh sách sản phẩm */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32 text-foreground">
           <Loader2 className="h-12 w-12 animate-spin text-primary mb-6" />
@@ -104,7 +100,7 @@ function ShopContent() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12 animate-in fade-in duration-700">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12 animate-in fade-in duration-1000">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={{
                 ...product,
@@ -117,12 +113,12 @@ function ShopContent() {
 
           {filteredProducts.length === 0 && (
             <div className="text-center py-32 border border-dashed border-border bg-muted/5">
-              <p className="text-muted-foreground italic uppercase font-black text-xs tracking-[0.3em]">No drops found in this archive.</p>
+              <p className="text-muted-foreground italic uppercase font-black text-xs tracking-[0.3em]">No drops detected in this sector.</p>
               <button 
                 onClick={() => setSelectedCategory("all")}
                 className="mt-6 text-[10px] font-black uppercase border-b-2 border-primary text-primary cursor-pointer hover:opacity-70 transition-opacity"
               >
-                Clear Filters
+                Reset Filters
               </button>
             </div>
           )}
@@ -136,10 +132,9 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      {/* Cập nhật màu loader của Suspense */}
       <Suspense fallback={
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <Loader2 className="animate-spin text-primary h-10 w-10" />
+          <Loader2 className="animate-spin text-primary h-12 w-12" />
         </div>
       }>
         <ShopContent />
