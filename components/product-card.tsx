@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBag, Eye } from "lucide-react";
@@ -16,38 +17,39 @@ interface ProductCardProps {
     category?: string;
     size_stocks?: any;
   };
+  priority?: boolean;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
-  const addToCart = (e: React.MouseEvent) => {
+export const ProductCard = memo(({ product, priority = false }: ProductCardProps) => { 
+  const isMOutOfStock = (product.size_stocks?.M || 0) <= 0;
+
+  const addToCart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      toast.error("AUTHENTICATION REQUIRED", {
+        description: "PLEASE LOGIN TO SECURE THIS ITEM.",
+        style: { borderRadius: 0, background: 'oklch(0.22 0.06 240)', color: 'white' }
+      });
+      return;
+    }
+
     const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    
-    // Mặc định Quick Add là Size M
     const selectedSize = "M";
     const stockM = product.size_stocks?.[selectedSize] || 0;
 
     const existingItemIndex = currentCart.findIndex(
       (item: any) => item.id === product.id && item.size === selectedSize
     );
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
-      toast.error("AUTHENTICATION REQUIRED", {
-        description: "Please login to secure this item in your bag.",
-        style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
-      });
-      return;
-    }
 
     const quantityInCart = existingItemIndex > -1 ? currentCart[existingItemIndex].quantity : 0;
 
-    // Kiểm tra kho của Size M với Toast hệ màu sáng
     if (quantityInCart + 1 > stockM) {
-      toast.error("OUT OF STOCK", {
-        description: `Size M of this product is currently out of stock.`,
-        style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--destructive)' }
+      toast.error("ARCHIVE EMPTY", {
+        description: `SIZE M IS CURRENTLY OUT OF STOCK.`,
+        style: { borderRadius: 0, border: '1px solid oklch(0.65 0.1 170)' }
       });
       return;
     }
@@ -70,77 +72,71 @@ export function ProductCard({ product }: ProductCardProps) {
     window.dispatchEvent(new Event("cart-updated"));
   
     toast.success("ADDED TO BAG", {
-      description: `${product.name} (Size M) added to your drop.`,
-      style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
+      description: `${product.name.toUpperCase()} (M) LINKED.`,
+      style: { borderRadius: 0, background: 'oklch(0.65 0.1 170)', color: 'white' }
     });
-  };
-
-  const isMOutOfStock = (product.size_stocks?.M || 0) <= 0;
+  }, [product]);
 
   return (
-    <div className="group relative bg-background border border-border overflow-hidden transition-all duration-500 hover:border-primary/50">      
+    <div className="group relative bg-white border border-zinc-100 rounded-none overflow-hidden transition-none hover:border-[oklch(0.65_0.1_170)]">      
       <Link href={`/products/${product.id}`} className="cursor-pointer">
-        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+        <div className="relative aspect-[3/4] overflow-hidden bg-[#fafafa]">
           <Image
             src={product.image || "/products/tee-1.jpg"}
             alt={product.name}
             fill
+            priority={priority}
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 300px"
             className={cn(
-              "object-cover transition-transform duration-700 group-hover:scale-110",
-              isMOutOfStock && "grayscale opacity-40"
+              "object-cover transition-none group-hover:scale-105",
+              isMOutOfStock && "grayscale opacity-30"
             )}
           />
           
-          {/* OVERLAY KHI HOVER */}
-          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px]">
+          <div className="absolute inset-0 bg-[oklch(0.22_0.06_240)]/10 opacity-0 group-hover:opacity-100 transition-none flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]">
             <Button 
               onClick={addToCart}
               disabled={isMOutOfStock}
               className={cn(
-                "w-40 rounded-none font-black uppercase italic text-[10px] py-6 transition-all transform translate-y-4 group-hover:translate-y-0 duration-500 cursor-pointer",
+                "w-36 rounded-none font-black uppercase italic text-[9px] py-6 transition-none cursor-pointer",
                 isMOutOfStock 
-                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border" 
-                : "bg-foreground text-background hover:bg-primary hover:text-primary-foreground shadow-xl"
+                ? "bg-zinc-200 text-zinc-400 cursor-not-allowed border-none" 
+                : "bg-[oklch(0.22_0.06_240)] text-white hover:bg-[oklch(0.65_0.1_170)] shadow-none"
               )}
             >
-              {isMOutOfStock ? (
-                "Sold Out (M)"
-              ) : (
-                <>
-                  <ShoppingBag className="mr-2 h-4 w-4" /> Quick Add
-                </>
-              )}
+              {isMOutOfStock ? "ARCHIVE EMPTY" : "QUICK ADD (M)"}
             </Button>
             
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-foreground transform translate-y-4 group-hover:translate-y-0 duration-700 delay-75 bg-white/80 px-3 py-1 border border-border">
-              <Eye className="h-3 w-3" /> View Archive
+            <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-[oklch(0.22_0.06_240)] bg-white/90 px-3 py-1.5 border border-zinc-100">
+              <Eye className="h-3 w-3" /> VIEW ARCHIVE
             </div>
           </div>
 
-          {/* BADGE HẾT HÀNG - Dùng màu Primary mới */}
           {isMOutOfStock && (
-            <div className="absolute top-4 left-4">
-               <span className="bg-primary text-primary-foreground text-[8px] font-black uppercase italic px-2 py-1 tracking-widest">Size M Out</span>
+            <div className="absolute top-0 left-0 bg-[oklch(0.65_0.1_170)] text-white text-[8px] font-black uppercase italic px-3 py-1.5 tracking-widest">
+              SOLD OUT
             </div>
           )}
         </div>
       </Link>
 
-      <div className="p-5 space-y-2">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground italic">
-              {product.category || "Authentic Drop"}
+      <div className="p-4 space-y-3">
+        <div className="flex justify-between items-start gap-2">
+          <div className="space-y-1 min-w-0">
+            <p className="text-[7px] font-black uppercase tracking-[0.4em] text-[oklch(0.65_0.1_170)] italic truncate">
+              {product.category || "AUTHENTIC DROP"}
             </p>
-            <h3 className="text-xs font-black uppercase italic text-foreground tracking-tighter group-hover:text-primary transition-colors leading-none">
+            <h3 className="text-[11px] font-black uppercase italic text-[oklch(0.22_0.06_240)] tracking-tighter group-hover:text-[oklch(0.65_0.1_170)] transition-none leading-none truncate">
               {product.name}
             </h3>
           </div>
-          <p className="text-xs font-black italic text-foreground tracking-tighter">
+          <p className="text-[11px] font-black italic text-[oklch(0.22_0.06_240)] tracking-tighter shrink-0">
             ${parseFloat(product.price.toString()).toFixed(2)}
           </p>
         </div>
       </div>
     </div>
   );
-}
+});
+
+ProductCard.displayName = "ProductCard";

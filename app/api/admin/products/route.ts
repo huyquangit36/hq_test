@@ -13,7 +13,6 @@ export async function GET() {
   }
 }
 
-// 1. PHẦN THÊM MỚI SẢN PHẨM (POST)
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -24,8 +23,6 @@ export async function POST(req: Request) {
     const color = formData.get("color") as string;
     const file = formData.get("image") as File;
     
-    // NHẬN DỮ LIỆU SIZE DƯỚI DẠNG CHUỖI JSON
-    // Ví dụ: "{"S": 10, "M": 20, "L": 0, "XL": 5}"
     const size_stocks = formData.get("size_stocks") as string; 
 
     let imageUrl = "/products/tee-1.jpg";
@@ -39,7 +36,6 @@ export async function POST(req: Request) {
       imageUrl = `/uploads/${filename}`;
     }
 
-    // LƯU VÀO DATABASE
     const result = await query(
       "INSERT INTO products (name, price, category, description, image_url, size_stocks, color) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
       [name, parseFloat(price), category, description, imageUrl, size_stocks, color]
@@ -50,7 +46,6 @@ export async function POST(req: Request) {
   }
 }
 
-// 2. PHẦN CẬP NHẬT SẢN PHẨM (PUT)
 export async function PUT(req: Request) {
   try {
     const formData = await req.formData();
@@ -63,7 +58,6 @@ export async function PUT(req: Request) {
     const file = formData.get("image") as File;
     const currentImage = formData.get("currentImage") as string;
     
-    // NHẬN SIZE_STOCKS MỚI
     const size_stocks = formData.get("size_stocks") as string;
 
     let imageUrl = currentImage;
@@ -76,7 +70,6 @@ export async function PUT(req: Request) {
       imageUrl = `/uploads/${filename}`;
     }
 
-    // CẬP NHẬT VÀO DATABASE
     const result = await query(
       "UPDATE products SET name=$1, price=$2, category=$3, description=$4, image_url=$5, size_stocks=$6, color=$7 WHERE id=$8 RETURNING *",
       [name, parseFloat(price), category, description, imageUrl, size_stocks, color, id]

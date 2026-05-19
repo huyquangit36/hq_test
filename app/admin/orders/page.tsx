@@ -13,7 +13,6 @@ export default function AdminOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  // --- THUẬT TOÁN PHÂN TRANG ---
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 5;
 
@@ -54,7 +53,6 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // 1. Logic Lọc
   const filteredOrders = orders.filter((o) => {
     const matchesSearch = 
       o.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -63,12 +61,10 @@ export default function AdminOrdersPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // 2. Reset trang khi lọc
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterStatus]);
 
-  // 3. Tính toán Phân trang
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
   const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);

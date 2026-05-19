@@ -26,7 +26,6 @@ function OrderHistoryContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const searchParams = useSearchParams();
-  // Lấy tín hiệu 'payment_success' từ file vnpay-return/route.ts chúng ta đã viết
   const paymentStatus = searchParams.get("status");
 
   const fetchOrders = async (userId: string) => {

@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
-// BIẾN TOÀN CỤC ĐỂ CACHE (Tốc độ siêu nhanh)
 let cachedInventory = "";
 let lastFetch = 0;
 
 async function getInventory() {
   const now = Date.now();
-  // Nếu đã có dữ liệu và chưa quá 10 phút thì lấy luôn, không gọi DB nữa
   if (cachedInventory && (now - lastFetch < 600000)) return cachedInventory;
   
   try {
@@ -34,7 +32,6 @@ export async function POST(req: Request) {
     }));
     if (contents.length > 0 && contents[0].role === "model") contents.shift();
 
-    // Dùng System Prompt của bạn
     const systemPrompt = `You are the Head Sales Expert at HQ Streetwear. 
     YOUR DATABASE: ${inventory} 
     YOUR PERSONALITY: - You are a streetwear enthusiast. Cool, confident, and professional. 

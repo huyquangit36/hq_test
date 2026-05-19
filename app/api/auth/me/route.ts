@@ -5,7 +5,6 @@ import { withAuth } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   return withAuth(request, async (_, user) => {
     try {
-      // Fetch fresh user data from database
       const users = await sql`
         SELECT id, email, first_name, last_name, role, created_at, updated_at
         FROM users

@@ -6,7 +6,6 @@ export async function POST(req: Request) {
   try {
     const { token, password } = await req.json();
 
-    // 1. Tìm token
     const resetRes = await query(
       "SELECT * FROM password_resets WHERE token = $1",
       [token]

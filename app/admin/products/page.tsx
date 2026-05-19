@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react"; // Thêm useMemo, useCallback
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Plus, Trash2, Search, X, Loader2, Upload, Pencil, Tag, Database, ChevronLeft, ChevronRight } from "lucide-react";
@@ -17,7 +17,6 @@ export default function AdminProductsPage() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStock, setFilterStock] = useState("all"); 
 
-  // --- THUẬT TOÁN PHÂN TRANG ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -33,12 +32,7 @@ export default function AdminProductsPage() {
     size_stocks: { S: 0, M: 0, L: 0, XL: 0 }, color: "", image_url: ""
   });
 
-  useEffect(() => {
-    setMounted(true);
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [prodRes, catRes] = await Promise.all([
         fetch("/api/admin/products"),
@@ -47,9 +41,27 @@ export default function AdminProductsPage() {
       const prods = await prodRes.json();
       const cats = await catRes.json();
       if (Array.isArray(prods)) setProducts(prods);
-      if (Array.isArray(cats)) setCategories(cats);
-    } catch (error) { console.error(error); } finally { setLoading(false); }
-  };
+      if (Array.isArray(cats)) {
+        setCategories(cats);
+        if (!editingId && cats.length > 0) setFormData(prev => ({...prev, category: cats[0].name}));
+      }
+    } catch (error) { 
+      toast.error("DATA LINK FAILURE");
+    } finally { 
+      setLoading(false); 
+    }
+  }, [editingId]);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const handleAddCategory = async () => {
     if (!newCategoryName) return;
@@ -73,27 +85,29 @@ export default function AdminProductsPage() {
     return Object.values(sizeStocks).reduce((acc: number, curr: any) => acc + (parseInt(curr as string) || 0), 0);
   };
 
-  // 1. Lọc sản phẩm trước
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = filterCategory === "all" || p.category === filterCategory;
-    const totalStock = getTotalStock(p.size_stocks);
-    let matchesStock = true;
-    if (filterStock === "low") matchesStock = totalStock > 0 && totalStock < 10;
-    if (filterStock === "out") matchesStock = totalStock <= 0;
-    return matchesSearch && matchesCategory && matchesStock;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = filterCategory === "all" || p.category === filterCategory;
+      const totalStock = getTotalStock(p.size_stocks);
+      let matchesStock = true;
+      if (filterStock === "low") matchesStock = totalStock > 0 && totalStock < 10;
+      if (filterStock === "out") matchesStock = totalStock <= 0;
+      return matchesSearch && matchesCategory && matchesStock;
+    });
+  }, [products, searchQuery, filterCategory, filterStock]);
 
-  // 2. Tự động về trang 1 khi thực hiện lọc/tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterCategory, filterStock]);
 
-  // 3. Cắt mảng để hiển thị theo trang
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  
+  const currentProducts = useMemo(() => {
+    return filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredProducts, indexOfFirstItem, indexOfLastItem]);
 
   const handleEdit = (product: any) => {
     setEditingId(product.id);
@@ -108,6 +122,7 @@ export default function AdminProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     const data = new FormData();
     if (editingId) data.append("id", editingId);
     data.append("name", formData.name);
@@ -128,6 +143,7 @@ export default function AdminProductsPage() {
         handleCloseModal();
       }
     } catch (e) { toast.error("SYSTEM ERROR"); }
+    finally { setLoading(false); }
   };
 
   const handleCloseModal = () => {
@@ -136,7 +152,7 @@ export default function AdminProductsPage() {
     setSelectedFile(null); setPreviewUrl(null);
   };
 
-  if (loading) return <div className="h-screen w-full flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>;
+  if (loading && products.length === 0) return <div className="h-screen w-full flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary h-12 w-12" /></div>;
 
   return (
     <>
@@ -169,7 +185,7 @@ export default function AdminProductsPage() {
         </div>
 
         <div className="border border-border bg-card overflow-hidden shadow-sm">
-          <div className="overflow-x-auto min-h-[450px]"> {/* Thêm min-h để không bị giật lag khi chuyển trang ít sản phẩm */}
+          <div className="overflow-x-auto min-h-[450px]">
             <table className="w-full text-left border-collapse min-w-[1000px]">
               <thead className="bg-muted/30">
                 <tr className="border-b border-border text-[10px] font-black uppercase text-muted-foreground italic">
@@ -182,8 +198,8 @@ export default function AdminProductsPage() {
               </thead>
               <tbody className="animate-in fade-in duration-500">
                 {currentProducts.map(p => {
-                  const total = getTotalStock(p.size_stocks);
                   const ss = p.size_stocks || {S:0, M:0, L:0, XL:0};
+                  const total = getTotalStock(ss);
                   return (
                     <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/10 transition-colors group">
                       <td className="p-6 flex items-center gap-5">
@@ -218,7 +234,6 @@ export default function AdminProductsPage() {
             </table>
           </div>
 
-          {/* --- BỘ ĐIỀU KHIỂN PHÂN TRANG (PAGINATION) --- */}
           {totalPages > 1 && (
             <div className="p-6 border-t border-border bg-muted/5 flex items-center justify-between">
               <p className="text-[10px] font-black uppercase text-muted-foreground italic">
@@ -228,7 +243,7 @@ export default function AdminProductsPage() {
                 <button 
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(prev => prev - 1)}
-                  className="h-10 w-10 border border-border flex items-center justify-center hover:bg-muted disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                  className="h-10 w-10 border border-border flex items-center justify-center hover:bg-muted disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -238,7 +253,7 @@ export default function AdminProductsPage() {
                     key={page}
                     onClick={() => setCurrentPage(page)}
                     className={cn(
-                      "h-10 w-10 font-black italic text-xs transition-all border",
+                      "h-10 w-10 font-black italic text-xs transition-all border cursor-pointer",
                       currentPage === page 
                         ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" 
                         : "border-border text-muted-foreground hover:border-primary hover:text-primary"
@@ -251,7 +266,7 @@ export default function AdminProductsPage() {
                 <button 
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="h-10 w-10 border border-border flex items-center justify-center hover:bg-muted disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                  className="h-10 w-10 border border-border flex items-center justify-center hover:bg-muted disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -267,16 +282,9 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* 2. MODAL DÙNG PORTAL - GIỮ NGUYÊN FIX DỨT ĐIỂM */}
       {showModal && mounted && createPortal(
-        <div 
-          className="fixed inset-0 w-full h-full bg-foreground/60 backdrop-blur-md z-[9999] flex items-start justify-center overflow-y-auto"
-          onClick={handleCloseModal}
-        >
-          <div 
-            className="bg-background border-2 border-foreground w-full max-w-4xl shadow-2xl relative my-4 md:my-10 animate-in zoom-in-95 duration-200 mx-2 md:mx-0"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 w-full h-full bg-foreground/60 backdrop-blur-md z-[9999] flex items-start justify-center overflow-y-auto" onClick={handleCloseModal}>
+          <div className="bg-background border-2 border-foreground w-full max-w-4xl shadow-2xl relative my-4 md:my-10 animate-in zoom-in-95 duration-200 mx-2 md:mx-0" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 md:p-12 space-y-12">
               <div className="flex justify-between items-start border-b-2 border-border pb-8">
                  <div className="space-y-1">
@@ -362,8 +370,8 @@ export default function AdminProductsPage() {
               </div>
 
               <div className="pt-10 border-t-4 border-foreground flex flex-col sm:flex-row gap-4">
-                <Button type="button" onClick={handleCloseModal} variant="outline" className="flex-1 border-border rounded-none uppercase font-black italic h-16 cursor-pointer hover:bg-muted">Abort protocol</Button>
-                <Button onClick={handleSubmit} className="flex-1 bg-foreground text-background hover:bg-primary hover:text-primary-foreground rounded-none uppercase font-black italic h-16 cursor-pointer shadow-2xl transition-all">Commit changes</Button>
+                <button type="button" onClick={handleCloseModal} className="flex-1 border border-border rounded-none uppercase font-black italic h-16 cursor-pointer hover:bg-muted text-sm transition-all">Abort protocol</button>
+                <button onClick={handleSubmit} className="flex-1 bg-foreground text-background hover:bg-primary hover:text-primary-foreground rounded-none uppercase font-black italic h-16 cursor-pointer shadow-2xl transition-all text-sm">Commit changes</button>
               </div>
             </div>
           </div>

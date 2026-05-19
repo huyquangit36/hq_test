@@ -13,12 +13,11 @@ export function ChatButton() {
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
-  const [mounted, setMounted] = useState(false); // Tránh lỗi SSR và Hydration
+  const [mounted, setMounted] = useState(false); 
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // 1. CHỈ CHẠY SAU KHI MOUNT ĐỂ TRÁNH LỖI RENDER
   useEffect(() => {
     setMounted(true);
     const savedChat = localStorage.getItem("hq_chat_history");
@@ -29,7 +28,6 @@ export function ChatButton() {
     }
   }, []);
 
-  // 2. THUẬT TOÁN: CLICK RA NGOÀI TỰ ĐÓNG
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (chatContainerRef.current && !chatContainerRef.current.contains(event.target as Node)) {
@@ -42,14 +40,12 @@ export function ChatButton() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  // 3. THUẬT TOÁN: TỰ ĐỘNG CUỘN VÀ LƯU LOCALSTORAGE
   useEffect(() => {
     if (!mounted) return;
     
     localStorage.setItem("hq_chat_history", JSON.stringify(messages));
     
     if (isOpen || messages.length > 0) {
-      // Dùng requestAnimationFrame để đảm bảo DOM đã cập nhật xong
       requestAnimationFrame(() => {
         if (scrollRef.current) {
           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -102,7 +98,7 @@ export function ChatButton() {
     });
   };
 
-  if (!mounted) return null; // Tránh lỗi không đồng nhất Server/Client
+  if (!mounted) return null;
 
   return (
     <div ref={chatContainerRef} className="relative z-[100]">

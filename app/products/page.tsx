@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Loader2 } from "lucide-react";
 import { Header } from "@/components/header";
@@ -9,13 +9,6 @@ import { ProductCard } from "@/components/product-card";
 import { ChatButton } from "@/components/chat-button";
 import { cn } from "@/lib/utils";
 
-const categories = [
-  { id: "all", name: "All Products" },
-  { id: "tshirts", name: "T-Shirts" },
-  { id: "hoodies", name: "Hoodies" },
-  { id: "pants", name: "Pants" },
-];
-
 function ShopContent() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +16,6 @@ function ShopContent() {
   
   const searchParams = useSearchParams();
   const categoryFromUrl = searchParams.get("category") || "all";
-  
   const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
 
   useEffect(() => {
@@ -35,29 +27,46 @@ function ShopContent() {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) {
-          setProducts(data);
-        }
+        if (Array.isArray(data)) setProducts(data);
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Fetch error:", err);
+        console.error("Archive Link Error:", err);
         setLoading(false);
       });
   }, []);
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const dynamicCategories = useMemo(() => {
+    if (products.length === 0) return [{ id: "all", name: "All Products" }];
+    
+    const uniqueCats = Array.from(new Set(products.map(p => p.category)))
+      .filter(Boolean)
+      .slice(0, 5); 
+
+    return [
+      { id: "all", name: "All Products" },
+      ...uniqueCats.map(cat => ({
+        id: cat.toLowerCase(),
+        name: cat.charAt(0).toUpperCase() + cat.slice(1)
+      }))
+    ];
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || product.category.toLowerCase() === selectedCategory.toLowerCase();
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, selectedCategory]);
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 bg-background">
+      {/* GIỮ NGUYÊN LAYOUT HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div>
           <h1 className="text-5xl font-black uppercase italic tracking-tighter text-foreground">
-            {categories.find(c => c.id === selectedCategory)?.name || "Shop All"}.
+            {dynamicCategories.find(c => c.id === selectedCategory)?.name || "Shop All"}.
           </h1>
           <p className="text-muted-foreground mt-2 italic font-medium">
             Archive Sector: <span className="text-primary uppercase font-bold">{selectedCategory}</span>
@@ -71,20 +80,22 @@ function ShopContent() {
             placeholder="SEARCH ARCHIVE..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-muted/20 border border-border rounded-none text-foreground text-sm focus:border-primary outline-none transition-all cursor-text placeholder:text-muted-foreground/40 font-bold italic"
+            className="w-full pl-12 pr-4 py-3 bg-muted/20 border border-border rounded-none text-foreground text-sm focus:border-primary outline-none transition-none placeholder:text-muted-foreground/40 font-bold italic"
+            autoComplete="one-time-code"
           />
         </div>
       </div>
 
+      {/* RENDER CATEGORY ĐỘNG */}
       <div className="flex flex-wrap gap-3 mb-12">
-        {categories.map((category) => (
+        {dynamicCategories.map((category) => (
           <button
             key={category.id}
             onClick={() => setSelectedCategory(category.id)}
             className={cn(
-              "px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all border italic cursor-pointer",
+              "px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-none border italic cursor-pointer",
               selectedCategory === category.id
-                ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20"
+                ? "bg-primary border-primary text-primary-foreground shadow-none"
                 : "bg-transparent border-border text-muted-foreground hover:border-primary hover:text-primary"
             )}
           >
@@ -100,23 +111,24 @@ function ShopContent() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12 animate-in fade-in duration-1000">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={{
                 ...product,
                 id: product.id.toString(),
                 price: parseFloat(product.price),
-                image: product.image_url || "/products/tee-1.jpg"
+                image: product.image_url
               }} />
             ))}
           </div>
 
+          {/* EMPTY STATE */}
           {filteredProducts.length === 0 && (
             <div className="text-center py-32 border border-dashed border-border bg-muted/5">
               <p className="text-muted-foreground italic uppercase font-black text-xs tracking-[0.3em]">No drops detected in this sector.</p>
               <button 
                 onClick={() => setSelectedCategory("all")}
-                className="mt-6 text-[10px] font-black uppercase border-b-2 border-primary text-primary cursor-pointer hover:opacity-70 transition-opacity"
+                className="mt-6 text-[10px] font-black uppercase border-b-2 border-primary text-primary cursor-pointer hover:opacity-70 transition-none"
               >
                 Reset Filters
               </button>
@@ -133,8 +145,8 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-background">
       <Header />
       <Suspense fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <Loader2 className="animate-spin text-primary h-12 w-12" />
+        <div className="min-h-screen bg-background flex items-center justify-center text-primary">
+          <Loader2 className="animate-spin h-12 w-12" />
         </div>
       }>
         <ShopContent />

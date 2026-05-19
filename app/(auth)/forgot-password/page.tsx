@@ -66,7 +66,6 @@ export default function ForgotPassword() {
                         inputMode="email"
                         autoComplete="one-time-code"
                         placeholder="your@email.com" 
-                        // SỬA: Font to hơn, input rộng hơn, không ép uppercase
                         className="w-full bg-transparent border-b-2 border-border p-6 pl-10 text-2xl font-medium outline-none focus:border-primary transition-all relative z-10 cursor-text placeholder:text-muted-foreground/30"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}

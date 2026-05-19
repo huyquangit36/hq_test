@@ -18,7 +18,6 @@ export async function GET() {
 
     const s = stats.rows[0];
 
-    // 5. Vòng tròn & Phân bổ loại hàng: CHỈ TÍNH ĐƠN COMPLETED
 const categoryDist = await query(`
   SELECT 
     TRIM(LOWER(p.category)) as category, -- Xóa khoảng trắng và viết thường
@@ -31,10 +30,8 @@ const categoryDist = await query(`
   GROUP BY p.category
 `);
 
-    // 6. Trạng thái đơn (Để hiện thanh Progress Pending/Shipping/Completed)
     const statusDist = await query("SELECT status, COUNT(*)::int as count FROM orders GROUP BY status");
 
-    // 7. Top Customers (Chỉ tính tiền đã thanh toán xong)
     const topCustomers = await query(`
       SELECT u.full_name, u.email, COUNT(o.id) as order_count, SUM(o.total_amount) as total_spent
       FROM users u

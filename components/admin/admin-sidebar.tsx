@@ -2,132 +2,95 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  Users,
-  BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-  X,
+import { 
+  LayoutDashboard, Package, ShoppingCart, Users, 
+  BarChart3, MessageSquare, Newspaper, LogOut, ArrowLeft 
 } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
 const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-  { href: "/admin/customers", label: "Customers", icon: Users },
-  { href: "/admin/stats", label: "Statistics", icon: BarChart3 },
+  { name: "OVERVIEW", href: "/admin", icon: LayoutDashboard },
+  { name: "PRODUCTS", icon: Package, href: "/admin/products" },
+  { name: "ORDERS", icon: ShoppingCart, href: "/admin/orders" },
+  { name: "CUSTOMERS", icon: Users, href: "/admin/customers" },
+  { name: "EDITORIAL", icon: Newspaper, href: "/admin/news" },
+  { name: "ANALYTICS", icon: BarChart3, href: "/admin/stats" },
+  { name: "INQUIRIES", icon: MessageSquare, href: "/admin/comments" },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const isActive = (href: string) => {
-    if (href === "/admin") {
-      return pathname === "/admin";
-    }
-    return pathname.startsWith(href);
-  };
 
   return (
-    <>
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border px-4 py-3">
-        <div className="flex items-center justify-between">
-          <Link href="/admin" className="flex items-center gap-2">
-            <span className="text-xl font-bold tracking-tighter text-sidebar-foreground">
-              HQ<span className="text-sidebar-primary">.</span>
-            </span>
-            <span className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider">
-              Admin
-            </span>
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-sidebar-foreground"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
+    <aside className={cn(
+      "bg-white border-r border-zinc-100 transition-all duration-300 flex flex-col shrink-0 z-50 overflow-hidden h-full",
+      "fixed inset-y-0 left-0 lg:relative",
+      isOpen ? "w-[280px] translate-x-0" : "w-0 -translate-x-full lg:w-20 lg:translate-x-0",
+    )}>
+      
+      {/* Logo Section */}
+      <div className={cn(
+        "h-20 flex items-center border-b border-zinc-50 shrink-0 px-6",
+        !isOpen && "lg:justify-center lg:px-0"
+      )}>
+         <Link href="/admin" className="flex items-center gap-3">
+           <div className="h-8 w-8 bg-[oklch(0.22_0.06_240)] flex items-center justify-center shrink-0">
+              <span className="text-white font-black italic text-xs">HQ</span>
+           </div>
+           {/* DÙNG HIDDEN KHI ĐÓNG */}
+           {isOpen && (
+             <span className="text-xl font-black uppercase italic tracking-tighter text-[oklch(0.22_0.06_240)] animate-in fade-in duration-300">
+                Admin<span className="text-[oklch(0.65_0.1_170)]">.</span>
+             </span>
+           )}
+         </Link>
       </div>
 
-      {/* Mobile Overlay */}
-      {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-sidebar border-r border-sidebar-border z-50 transform transition-transform duration-300 lg:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="px-6 py-5 border-b border-sidebar-border">
-            <Link href="/admin" className="flex items-center gap-2">
-              <span className="text-xl font-bold tracking-tighter text-sidebar-foreground">
-                HQ<span className="text-sidebar-primary">.</span>
-              </span>
-              <span className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider">
-                Admin
-              </span>
-            </Link>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Footer */}
-          <div className="px-4 py-4 border-t border-sidebar-border space-y-1">
-            <Link
-              href="/admin/settings"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+      {/* Navigation */}
+      <nav className="flex-1 py-8 flex flex-col gap-2 overflow-y-auto overflow-x-hidden scrollbar-hide">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link 
+              key={item.name} 
+              href={item.href}
+              onClick={onClose}
+              className={cn(
+                "flex items-center transition-none group cursor-pointer relative py-4 px-7",
+                isActive ? "text-[oklch(0.65_0.1_170)]" : "text-zinc-400 hover:text-black",
+                !isOpen && "lg:justify-center lg:px-0"
+              )}
             >
-              <Settings className="h-5 w-5" />
-              Settings
+              {isActive && <div className="absolute left-0 w-1 h-6 bg-[oklch(0.65_0.1_170)]" />}
+              
+              <item.icon className={cn("h-4 w-4 shrink-0", isActive && "text-[oklch(0.65_0.1_170)]")} />
+              
+              {/* DÙNG HIDDEN KHI ĐÓNG ĐỂ ICON KHÔNG BỊ LỆCH MARGIN */}
+              {isOpen && (
+                <span className="text-[10px] font-black uppercase italic tracking-[0.2em] ml-4 whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                  {item.label || item.name}
+                </span>
+              )}
             </Link>
-            <Link
-              href="/"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
-            >
-              <LogOut className="h-5 w-5" />
-              Exit Admin
-            </Link>
-          </div>
-        </div>
-      </aside>
-    </>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div className="mt-auto p-4 border-t border-zinc-50 bg-zinc-50/30">
+         <Link href="/" className={cn(
+           "flex items-center py-3 px-4 transition-none cursor-pointer text-zinc-400 hover:text-black",
+           !isOpen && "lg:justify-center lg:px-0"
+         )}>
+            <ArrowLeft size={16} />
+            {isOpen && <span className="text-[10px] font-black uppercase italic tracking-widest ml-4 animate-in fade-in duration-300">Live Shop</span>}
+         </Link>
+      </div>
+    </aside>
   );
 }

@@ -6,14 +6,19 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get("productId");
 
-    const result = await query(
-      `SELECT c.*, u.full_name 
-       FROM comments c 
-       JOIN users u ON c.user_id = u.id 
-       WHERE c.product_id = $1 
-       ORDER BY c.created_at DESC`,
-      [productId]
-    );
+    const res = await query(`
+  SELECT 
+    c.id, 
+    c.content, 
+    c.reply_content, 
+    c.is_answered, 
+    c.created_at, 
+    u.full_name 
+  FROM comments c 
+  INNER JOIN users u ON c.user_id = u.id 
+  WHERE c.product_id = $1 
+  ORDER BY c.created_at DESC
+`, [productId]);
     return NextResponse.json(result.rows);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

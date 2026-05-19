@@ -15,11 +15,9 @@ export default function AdminCustomersPage() {
   const [filterRole, setFilterRole] = useState("all");
   const [mounted, setMounted] = useState(false);
 
-  // --- PHÂN TRANG ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // --- MODAL THÊM THÀNH VIÊN ---
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ full_name: "", email: "", password: "", role: "customer" });
@@ -41,7 +39,6 @@ export default function AdminCustomersPage() {
     fetchCustomers(); 
   }, []);
 
-  // THUẬT TOÁN: Đổi Role trực tiếp
   const handleRoleChange = async (userId: number, newRole: string) => {
     try {
       const res = await fetch("/api/admin/customers", {
@@ -61,7 +58,6 @@ export default function AdminCustomersPage() {
     }
   };
 
-  // THUẬT TOÁN: Thêm Member mới
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);

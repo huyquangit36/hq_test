@@ -275,7 +275,6 @@ export default function RegisterPage() {
   )
 }
 
-// Component phụ hiển thị check mật khẩu
 function PasswordCheck({ label, passed }: { label: string; passed: boolean }) {
   return (
     <div className={`flex items-center gap-1.5 ${passed ? "text-primary" : "text-muted-foreground/40"}`}>

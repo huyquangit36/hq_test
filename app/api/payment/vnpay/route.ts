@@ -16,7 +16,6 @@ export async function POST(req: Request) {
     }
 
     const date = new Date();
-    // Tạo CreateDate theo định dạng yyyyMMddHHmmss (GTM+7)
     const createDate = date.toISOString().slice(0, 19).replace(/[-:T]/g, "");
 
     let vnp_Params: any = {
@@ -28,21 +27,17 @@ export async function POST(req: Request) {
       'vnp_TxnRef': orderId.toString(),
       'vnp_OrderInfo': 'Thanh toan cho don hang ' + orderId,
       'vnp_OrderType': 'other',
-      'vnp_Amount': Math.floor(amount * 25000 * 100), // Phải là số nguyên (VND * 100)
+      'vnp_Amount': Math.floor(amount * 25000 * 100), 
       'vnp_ReturnUrl': returnUrl,
       'vnp_IpAddr': '127.0.0.1',
       'vnp_CreateDate': createDate,
     };
 
-    // 1. Sắp xếp các tham số theo thứ tự bảng chữ cái của Key
     vnp_Params = Object.keys(vnp_Params).sort().reduce((obj: any, key) => {
       obj[key] = vnp_Params[key];
       return obj;
     }, {});
 
-    // 2. Tạo chuỗi dữ liệu băm (Raw Data)
-    // Thuật toán: key=value kết nối bằng dấu &
-    // Lưu ý: Không dùng URLSearchParams ở đây để tránh lỗi dấu '+'
     const signData = Object.keys(vnp_Params)
       .map((key) => {
         const val = vnp_Params[key];
@@ -51,14 +46,11 @@ export async function POST(req: Request) {
       })
       .filter(p => p !== "")
       .join("&")
-      .replace(/%20/g, "+"); // VNPAY yêu cầu dấu cách biến thành dấu '+' trong chuỗi băm 2.1.0
+      .replace(/%20/g, "+"); 
 
-    // 3. Tạo mã băm HMAC-SHA512
     const hmac = crypto.createHmac("sha512", secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
     
-    // 4. Tạo URL cuối cùng
-    // Chuỗi query dùng cho URL cũng phải đổi %20 thành + để khớp chữ ký
     const finalUrl = `${vnpUrl}?${signData}&vnp_SecureHash=${signed}`;
 
     console.log("--- SECURE PROTOCOL v2.1.0 GENERATED ---");

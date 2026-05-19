@@ -25,7 +25,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2. TẠO ĐƠN HÀNG
     const orderResult = await query(
       "INSERT INTO orders (user_id, total_amount, status, shipping_address) VALUES ($1, $2, $3, $4) RETURNING id",
       [user_id, total_amount, 'Pending', shipping_address]

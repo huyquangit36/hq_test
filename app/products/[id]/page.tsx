@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import Image from "next/image";
-import { ShoppingBag, ArrowLeft, Loader2, Star, User, X, MessageSquare, UserCheck } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Loader2, Star, User, X, MessageSquare, UserCheck, Zap, ShieldCheck, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
@@ -11,6 +11,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+const ALL_SIZES = ["S", "M", "L", "XL"];
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -24,11 +25,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [newQuestion, setNewQuestion] = useState("");
   const [isPosting, setIsPosting] = useState(false);
 
-  
-
-  const ALL_SIZES = ["S", "M", "L", "XL"];
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [prodRes, revRes, quesRes] = await Promise.all([
         fetch(`/api/products/${id}`),
@@ -41,36 +38,34 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       
       if (!prodData.error) {
         setProduct(prodData);
-        // Tự động chọn size đầu tiên còn hàng
         const firstAvailableSize = ALL_SIZES.find(s => (prodData.size_stocks?.[s] || 0) > 0);
         if (firstAvailableSize) setSelectedSize(firstAvailableSize);
       }
       if (Array.isArray(revData)) setReviews(revData);
       if (Array.isArray(quesData)) setQuestions(quesData);
-      
-      setLoading(false);
     } catch (e) {
+      console.error("Archive Link Error");
+    } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
     fetchData();
-  }, [id]);
+  }, [id, fetchData]);
   
-
-  const addToCart = () => {
+  const addToCart = useCallback(() => {
     if (!product) return;
 
     if (!user) {
-    toast.error("SESSION EXPIRED OR MISSING", {
-      description: "Please authorize your account to add items to your drop.",
-      style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
-    });
-    return;
-  }
+      toast.error("AUTHENTICATION REQUIRED", {
+        description: "PLEASE LOGIN TO SECURE THIS ITEM.",
+        style: { borderRadius: 0, background: 'oklch(0.22 0.06 240)', color: 'white' }
+      });
+      return;
+    }
 
     const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
     const stockForSelectedSize = product.size_stocks?.[selectedSize] || 0;
@@ -81,8 +76,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
     if (quantityInCart + 1 > stockForSelectedSize) {
       toast.error("OUT OF STOCK", {
-        description: `Size ${selectedSize} currently has only ${stockForSelectedSize} items available.`,
-        style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--destructive)' }
+        description: `Size ${selectedSize} only has ${stockForSelectedSize} units left in archive.`,
+        style: { borderRadius: 0, border: '1px solid oklch(0.65 0.1 170)' }
       });
       return;
     }
@@ -100,15 +95,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     window.dispatchEvent(new Event("cart-updated"));
 
     toast.success("ADDED TO BAG", {
-      description: `${product.name} - Size ${selectedSize} is ready for checkout.`,
-      style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
+      description: `${product.name} (SIZE ${selectedSize}) LINKED.`,
+      style: { borderRadius: 0, background: 'oklch(0.65 0.1 170)', color: 'white' }
     });
-  };
+  }, [product, selectedSize, user]);
 
   const handlePostQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error("LOGIN REQUIRED", { description: "Please log in to ask a question." });
+      toast.error("LOGIN REQUIRED");
       return;
     }
     setIsPosting(true);
@@ -119,33 +114,41 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     if (res.ok) {
       setNewQuestion("");
       fetchData();
-      toast.success("QUESTION POSTED", { description: "Your inquiry has been sent to the HQ team." });
+      toast.success("INQUIRY TRANSMITTED");
     }
     setIsPosting(false);
   };
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen bg-background"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>;
-  if (!product) return <div className="p-20 text-center text-foreground bg-background min-h-screen uppercase font-black italic">Product not found.</div>;
+  if (loading) return (
+    <div className="flex flex-col justify-center items-center min-h-screen bg-background">
+      <Loader2 className="animate-spin text-primary h-10 w-10 mb-4" />
+      <p className="text-[10px] font-black uppercase italic tracking-[0.4em] animate-pulse">Syncing Archive...</p>
+    </div>
+  );
+
+  if (!product) return <div className="p-20 text-center text-foreground bg-background min-h-screen uppercase font-black italic">Archive not found.</div>;
 
   const isOutOfStock = !ALL_SIZES.some(s => (product.size_stocks?.[s] || 0) > 0);
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary selection:text-white">
       <Header />
       
       <main className="max-w-7xl mx-auto px-4 py-24">
-        <Link href="/products" className="flex items-center gap-2 text-muted-foreground hover:text-primary mb-10 transition-colors uppercase text-[10px] font-black tracking-widest cursor-pointer">
+        <Link href="/products" className="flex items-center gap-2 text-muted-foreground hover:text-primary mb-10 transition-none uppercase text-[10px] font-black tracking-widest cursor-pointer">
           <ArrowLeft className="h-4 w-4" /> Back to collection
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
-          {/* PRODUCT IMAGE */}
+          {/* PRODUCT IMAGE - GIỮ NGUYÊN LAYOUT, TỐI ƯU HIỆU SUẤT */}
           <div className="relative aspect-square bg-muted border border-border overflow-hidden group">
             <Image 
               src={product.image_url || "/products/tee-1.jpg"} 
               alt={product.name} 
               fill 
-              className="object-cover transition-transform duration-1000 group-hover:scale-105" 
+              priority 
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover transition-none group-hover:scale-105" 
             />
             {isOutOfStock && (
               <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center backdrop-blur-[2px]">
@@ -154,7 +157,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             )}
           </div>
 
-          {/* PRODUCT INFO */}
+          {/* PRODUCT INFO - GIỮ NGUYÊN 100% THIẾT KẾ */}
           <div className="flex flex-col justify-center space-y-10">
             <div>
               <span className="text-primary font-black uppercase tracking-[0.4em] text-[10px] italic">Authentic Drop.</span>
@@ -186,9 +189,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                       onClick={() => setSelectedSize(size)} 
                       disabled={sizeStock <= 0}
                       className={cn(
-                        "w-14 h-14 border flex flex-col items-center justify-center font-black transition-all relative cursor-pointer",
+                        "w-14 h-14 border flex flex-col items-center justify-center font-black transition-none relative cursor-pointer",
                         selectedSize === size 
-                          ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
+                          ? "border-primary bg-primary text-primary-foreground shadow-none" 
                           : sizeStock > 0 
                             ? "border-border text-muted-foreground hover:border-primary hover:text-primary"
                             : "border-muted bg-muted/50 text-muted-foreground/30 cursor-not-allowed"
@@ -209,10 +212,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               onClick={addToCart} 
               disabled={isOutOfStock || (product.size_stocks?.[selectedSize] || 0) <= 0}
               className={cn(
-                "w-full py-10 text-xl font-black uppercase italic rounded-none flex gap-4 transition-all active:scale-95 cursor-pointer",
+                "w-full py-10 text-xl font-black uppercase italic rounded-none flex gap-4 transition-none active:scale-95 cursor-pointer",
                 isOutOfStock || (product.size_stocks?.[selectedSize] || 0) <= 0
                 ? "bg-muted text-muted-foreground cursor-not-allowed border border-border" 
-                : "bg-foreground text-background hover:bg-primary hover:text-primary-foreground shadow-xl"
+                : "bg-foreground text-background hover:bg-primary hover:text-primary-foreground shadow-none"
               )}
             >
               {(product.size_stocks?.[selectedSize] || 0) > 0 ? (
@@ -226,7 +229,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {/* REVIEWS SECTION */}
+        {/* REVIEWS SECTION - GIỮ NGUYÊN THẨM MỸ */}
         <div className="mt-32 border-t border-border pt-20">
           <div className="flex justify-between items-end mb-16">
             <div>
@@ -238,7 +241,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {reviews.map((rev) => (
-              <div key={rev.id} className="bg-card border border-border p-8 space-y-6 shadow-sm">
+              <div key={rev.id} className="bg-card border border-border p-8 space-y-6 shadow-none">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 bg-muted border border-border flex items-center justify-center font-black text-xs italic text-primary">{rev.full_name.charAt(0)}</div>
@@ -256,14 +259,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
             ))}
           </div>
-          {reviews.length === 0 && (
-            <div className="py-20 text-center border border-dashed border-border bg-muted/5">
-              <p className="text-muted-foreground italic uppercase text-xs font-bold tracking-widest">No feedbacks yet.</p>
-            </div>
-          )}
         </div>
 
-        {/* INQUIRY HUB */}
+        {/* INQUIRY HUB - GIỮ NGUYÊN CẤU TRÚC */}
         <div className="mt-32 border-t border-border pt-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
             <div className="lg:col-span-4 space-y-8">
@@ -274,10 +272,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     value={newQuestion} 
                     onChange={(e) => setNewQuestion(e.target.value)} 
                     placeholder="WHAT'S ON YOUR MIND?" 
-                    className="w-full bg-background border border-border p-4 text-xs font-bold text-foreground italic outline-none focus:border-primary h-32 resize-none cursor-text" 
+                    className="w-full bg-background border border-border p-4 text-xs font-bold text-foreground italic outline-none focus:border-primary h-32 resize-none transition-none cursor-text" 
                     required 
                   />
-                  <Button disabled={isPosting} type="submit" className="w-full bg-primary text-primary-foreground rounded-none font-black uppercase italic py-7 hover:bg-foreground hover:text-background transition-all cursor-pointer">
+                  <Button disabled={isPosting} type="submit" className="w-full bg-primary text-primary-foreground rounded-none font-black uppercase italic py-7 hover:bg-foreground hover:text-background transition-none cursor-pointer">
                     {isPosting ? <Loader2 className="animate-spin h-4 w-4" /> : "Post Inquiry"}
                   </Button>
                </form>
@@ -287,7 +285,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] italic border-b border-border pb-4">{questions.length} Conversations</p>
                <div className="space-y-12">
                   {questions.map((q) => (
-                    <div key={q.id} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div key={q.id} className="space-y-4 transition-none">
                        <div className="flex items-start gap-4">
                           <div className="h-10 w-10 bg-background border border-border flex items-center justify-center font-black text-primary text-xs italic">{q.full_name.charAt(0)}</div>
                           <div className="flex-1">
@@ -314,14 +312,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
       </main>
-
-      {/* LIGHTBOX FOR IMAGES */}
-      {selectedImage && (
-        <div className="fixed inset-0 z-[1000] bg-white/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setSelectedImage(null)}>
-          <button className="absolute top-10 right-10 text-foreground hover:text-primary transition-colors cursor-pointer"><X size={40} /></button>
-          <img src={selectedImage} className="max-w-full max-h-full object-contain shadow-2xl animate-in zoom-in-95 duration-300 border border-border" alt="View" />
-        </div>
-      )}
 
       <Footer />
       <ChatButton />

@@ -15,7 +15,6 @@ export async function POST(req: Request) {
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 phút
 
-    // LƯU VÀO CỘT EMAIL
     await query("INSERT INTO password_resets (email, token, expires_at) VALUES ($1, $2, $3)", 
       [email.toLowerCase(), token, expires]
     );

@@ -3,7 +3,6 @@ import { query } from "@/lib/db";
 
 export async function GET() {
   try {
-    // THUẬT TOÁN: JOIN 4 bảng để lấy đầy đủ thông tin Khách hàng, Sản phẩm và SIZE
     const result = await query(`
       SELECT 
         o.id, 

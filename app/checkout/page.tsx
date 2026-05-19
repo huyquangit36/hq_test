@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  ShoppingBag, MapPin, CreditCard, Loader2, Lock, Trash2, Plus, Minus, ArrowRight, Check 
+import {
+  ShoppingBag, MapPin, CreditCard, Loader2, Lock, Trash2, Plus, Minus, ArrowRight, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +26,21 @@ export default function CheckoutPage() {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const storedCart = localStorage.getItem("cart");
-    if (storedUser) setUser(JSON.parse(storedUser));
+
+    if (storedUser) {
+      const u = JSON.parse(storedUser);
+      setUser(u);
+
+      fetch(`/api/user/me?userId=${u.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.address) {
+            setAddress(data.address);
+          }
+        })
+        .catch(err => console.error("Identity fetch failed"));
+    }
+
     if (storedCart) setCartItems(JSON.parse(storedCart));
     setLoading(false);
   }, []);
@@ -60,81 +74,81 @@ export default function CheckoutPage() {
   const shipping = cartItems.length > 0 ? 5.0 : 0;
   const total = subtotal + shipping;
 
-const handlePlaceOrder = async () => {
-  if (!address) {
-    toast.warning("MISSING INFO", { description: "Please provide a delivery address." });
-    return;
-  }
-
-  const userId = user?.id;
-  if (!userId) {
-    toast.error("AUTH ERROR", { description: "Please login again." });
-    return;
-  }
-
-  setIsSubmitting(true);
-  try {
-    const response = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: userId,
-        total_amount: total,
-        shipping_address: address,
-        items: cartItems.map(item => ({
-          product_id: item.id,
-          quantity: item.quantity,
-          price: parseFloat(item.price.toString()),
-          size: item.size
-        }))
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Order creation failed.");
+  const handlePlaceOrder = async () => {
+    if (!address) {
+      toast.warning("MISSING INFO", { description: "Please provide a delivery address." });
+      return;
     }
 
-    const finalOrderId = data.orderId;
+    const userId = user?.id;
+    if (!userId) {
+      toast.error("AUTH ERROR", { description: "Please login again." });
+      return;
+    }
 
-    if (paymentMethod === "VNPAY") {
-      const payRes = await fetch("/api/payment/vnpay", {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: total, orderId: finalOrderId })
+        body: JSON.stringify({
+          user_id: userId,
+          total_amount: total,
+          shipping_address: address,
+          items: cartItems.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity,
+            price: parseFloat(item.price.toString()),
+            size: item.size
+          }))
+        }),
       });
-      
-      const payData = await payRes.json();
-      if (payRes.ok && payData.paymentUrl) {
-        window.location.href = payData.paymentUrl;
-        return;
-      } else {
-        throw new Error(payData.error || "VNPAY Error");
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Order creation failed.");
       }
+
+      const finalOrderId = data.orderId;
+
+      if (paymentMethod === "VNPAY") {
+        const payRes = await fetch("/api/payment/vnpay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: total, orderId: finalOrderId })
+        });
+
+        const payData = await payRes.json();
+        if (payRes.ok && payData.paymentUrl) {
+          window.location.href = payData.paymentUrl;
+          return;
+        } else {
+          throw new Error(payData.error || "VNPAY Error");
+        }
+      }
+
+      localStorage.removeItem("cart");
+      window.dispatchEvent(new Event("cart-updated"));
+
+      toast.success("ORDER SECURED", { description: "Your drop has been recorded." });
+
+      router.push("/orders/history");
+
+    } catch (error: any) {
+      console.error("CHECKOUT_ERROR:", error.message);
+      toast.error("ORDER FAILED", { description: error.message });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    localStorage.removeItem("cart");
-    window.dispatchEvent(new Event("cart-updated"));
-    
-    toast.success("ORDER SECURED", { description: "Your drop has been recorded." });
-    
-    router.push("/orders/history");
-
-  } catch (error: any) {
-    console.error("CHECKOUT_ERROR:", error.message);
-    toast.error("ORDER FAILED", { description: error.message });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>;
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto px-4 py-32">
         {!user ? (
           <div className="max-w-md mx-auto text-center py-20 border border-border bg-card shadow-xl">
@@ -161,7 +175,7 @@ const handlePlaceOrder = async () => {
                 <h1 className="text-6xl font-black uppercase italic tracking-tighter mb-2 text-foreground">Checkout<span className="text-primary">.</span></h1>
                 <p className="text-zinc-500 text-[10px] uppercase tracking-[0.4em] font-black italic">Finalize Your Drop</p>
               </div>
-              
+
               <Card className="bg-card border-border rounded-none shadow-sm">
                 <CardHeader className="border-b border-border bg-muted/20">
                   <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 text-foreground italic">
@@ -169,45 +183,45 @@ const handlePlaceOrder = async () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                      <div>
-                        <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Recipient</label>
-                        <p className="font-black uppercase italic text-md text-foreground">{user.full_name}</p>
-                      </div>
-                      <div>
-                        <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Contact</label>
-                        <p className="font-black text-md italic text-foreground">{user.email}</p>
-                      </div>
-                   </div>
-                   <textarea 
-                     value={address}
-                     onChange={(e) => setAddress(e.target.value)}
-                     placeholder="ENTER FULL DESTINATION ADDRESS..." 
-                     className="w-full bg-muted/20 border border-border p-5 text-xs text-foreground focus:border-primary outline-none min-h-[120px] transition-all font-black italic tracking-widest uppercase cursor-text" 
-                   />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div>
+                      <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Recipient</label>
+                      <p className="font-black uppercase italic text-md text-foreground">{user.full_name}</p>
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Contact</label>
+                      <p className="font-black text-md italic text-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  <textarea
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="ENTER FULL DESTINATION ADDRESS..."
+                    className="w-full bg-muted/20 border border-border p-5 text-xs text-foreground focus:border-primary outline-none min-h-[120px] transition-all font-black italic tracking-widest uppercase cursor-text"
+                  />
                 </CardContent>
               </Card>
 
               <Card className="bg-card border-border rounded-none shadow-sm">
                 <CardHeader className="border-b border-border bg-muted/20">
-                   <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 text-foreground italic">
+                  <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 text-foreground italic">
                     <CreditCard className="h-3 w-3 text-primary" /> Payment Method
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8 space-y-4">
-                   <div onClick={() => setPaymentMethod("COD")} className={cn("p-6 border-2 flex items-center justify-between transition-all cursor-pointer", paymentMethod === "COD" ? "border-primary bg-primary/5" : "border-border bg-background")}>
-                      <span className="text-xs font-black uppercase italic tracking-widest text-foreground">Cash on Delivery (COD)</span>
-                      <div className={cn("h-5 w-5 rounded-full border-2 border-primary flex items-center justify-center", paymentMethod === "COD" && "bg-primary shadow-lg shadow-primary/20")}>
-                        {paymentMethod === "COD" && <Check size={12} className="text-white" />}
-                      </div>
-                   </div>
+                  <div onClick={() => setPaymentMethod("COD")} className={cn("p-6 border-2 flex items-center justify-between transition-all cursor-pointer", paymentMethod === "COD" ? "border-primary bg-primary/5" : "border-border bg-background")}>
+                    <span className="text-xs font-black uppercase italic tracking-widest text-foreground">Cash on Delivery (COD)</span>
+                    <div className={cn("h-5 w-5 rounded-full border-2 border-primary flex items-center justify-center", paymentMethod === "COD" && "bg-primary shadow-lg shadow-primary/20")}>
+                      {paymentMethod === "COD" && <Check size={12} className="text-white" />}
+                    </div>
+                  </div>
 
-                   <div onClick={() => setPaymentMethod("VNPAY")} className={cn("p-6 border-2 flex items-center justify-between transition-all cursor-pointer", paymentMethod === "VNPAY" ? "border-primary bg-primary/5" : "border-border bg-background")}>
-                      <span className="text-xs font-black uppercase italic tracking-widest text-foreground">Online Payment (VNPAY)</span>
-                      <div className={cn("h-5 w-5 rounded-full border-2 border-primary flex items-center justify-center", paymentMethod === "VNPAY" && "bg-primary shadow-lg shadow-primary/20")}>
-                        {paymentMethod === "VNPAY" && <Check size={12} className="text-white" />}
-                      </div>
-                   </div>
+                  <div onClick={() => setPaymentMethod("VNPAY")} className={cn("p-6 border-2 flex items-center justify-between transition-all cursor-pointer", paymentMethod === "VNPAY" ? "border-primary bg-primary/5" : "border-border bg-background")}>
+                    <span className="text-xs font-black uppercase italic tracking-widest text-foreground">Online Payment (VNPAY)</span>
+                    <div className={cn("h-5 w-5 rounded-full border-2 border-primary flex items-center justify-center", paymentMethod === "VNPAY" && "bg-primary shadow-lg shadow-primary/20")}>
+                      {paymentMethod === "VNPAY" && <Check size={12} className="text-white" />}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -225,27 +239,27 @@ const handlePlaceOrder = async () => {
                     <div className="max-h-[450px] overflow-y-auto px-8 py-8 space-y-8 scrollbar-hide">
                       {cartItems.map((item, index) => (
                         <div key={index} className="flex justify-between items-start gap-5 text-background">
-                           <div className="flex gap-5">
-                              <div className="h-20 w-20 bg-background/10 flex-shrink-0 border border-background/10 overflow-hidden">
-                                <img src={item.image || "/products/tee-1.jpg"} className="object-cover h-full w-full opacity-90" alt="Product" />
+                          <div className="flex gap-5">
+                            <div className="h-20 w-20 bg-background/10 flex-shrink-0 border border-background/10 overflow-hidden">
+                              <img src={item.image || "/products/tee-1.jpg"} className="object-cover h-full w-full opacity-90" alt="Product" />
+                            </div>
+                            <div className="space-y-2">
+                              <p className="font-black uppercase text-[13px] italic leading-tight tracking-tighter">{item.name}</p>
+                              <div className="flex items-center gap-3">
+                                <span className="bg-primary text-primary-foreground text-[8px] font-black px-2 py-0.5 uppercase italic">SIZE {item.size}</span>
+                                <span className="text-[10px] font-bold text-background/50 italic">${parseFloat(item.price).toFixed(2)}</span>
                               </div>
-                              <div className="space-y-2">
-                                <p className="font-black uppercase text-[13px] italic leading-tight tracking-tighter">{item.name}</p>
-                                <div className="flex items-center gap-3">
-                                  <span className="bg-primary text-primary-foreground text-[8px] font-black px-2 py-0.5 uppercase italic">SIZE {item.size}</span>
-                                  <span className="text-[10px] font-bold text-background/50 italic">${parseFloat(item.price).toFixed(2)}</span>
-                                </div>
-                                <div className="flex items-center gap-4 mt-3 bg-background/5 border border-background/10 w-fit px-3 py-1">
-                                   <button onClick={() => updateQuantity(index, -1)} className="hover:text-primary cursor-pointer transition-colors"><Minus size={12} /></button>
-                                   <span className="text-[11px] font-black w-4 text-center">{item.quantity}</span>
-                                   <button onClick={() => updateQuantity(index, 1)} className="hover:text-primary cursor-pointer transition-colors"><Plus size={12} /></button>
-                                </div>
+                              <div className="flex items-center gap-4 mt-3 bg-background/5 border border-background/10 w-fit px-3 py-1">
+                                <button onClick={() => updateQuantity(index, -1)} className="hover:text-primary cursor-pointer transition-colors"><Minus size={12} /></button>
+                                <span className="text-[11px] font-black w-4 text-center">{item.quantity}</span>
+                                <button onClick={() => updateQuantity(index, 1)} className="hover:text-primary cursor-pointer transition-colors"><Plus size={12} /></button>
                               </div>
-                           </div>
-                           <div className="flex flex-col items-end gap-4">
-                              <p className="font-black italic text-md tracking-tighter">${(parseFloat(item.price) * (item.quantity || 1)).toFixed(2)}</p>
-                              <button onClick={() => removeFromCart(index)} className="text-background/30 hover:text-primary transition-all cursor-pointer"><Trash2 size={16} /></button>
-                           </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-4">
+                            <p className="font-black italic text-md tracking-tighter">${(parseFloat(item.price) * (item.quantity || 1)).toFixed(2)}</p>
+                            <button onClick={() => removeFromCart(index)} className="text-background/30 hover:text-primary transition-all cursor-pointer"><Trash2 size={16} /></button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -264,7 +278,7 @@ const handlePlaceOrder = async () => {
                         <span className="text-primary">${total.toFixed(2)}</span>
                       </div>
 
-                      <Button 
+                      <Button
                         onClick={handlePlaceOrder}
                         disabled={isSubmitting}
                         className="w-full mt-8 bg-primary text-primary-foreground hover:bg-background hover:text-foreground font-black uppercase italic py-10 text-lg rounded-none transition-all active:scale-[0.98] shadow-xl cursor-pointer"

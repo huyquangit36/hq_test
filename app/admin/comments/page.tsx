@@ -14,7 +14,6 @@ export default function AdminInquiryManager() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [replies, setReplies] = useState<{ [key: number]: string }>({});
 
-  // --- PHÂN TRANG ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -60,17 +59,14 @@ export default function AdminInquiryManager() {
     }
   };
 
-  // 1. Logic Lọc
   const filteredComments = comments.filter((c) => {
     const matchesSearch = c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || c.product_name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = filterStatus === "all" || (filterStatus === "pending" ? !c.is_answered : c.is_answered);
     return matchesSearch && matchesStatus;
   });
 
-  // 2. Reset trang khi lọc
   useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStatus]);
 
-  // 3. Tính toán Phân trang
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredComments.slice(indexOfFirstItem, indexOfLastItem);
