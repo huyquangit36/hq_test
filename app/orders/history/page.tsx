@@ -51,7 +51,7 @@ function OrderHistoryContent() {
         localStorage.removeItem("cart");
         window.dispatchEvent(new Event("cart-updated"));
 
-        toast.success("DROP SECURED", { 
+        toast.success("DROP SECURED", {
           description: "Payment verified. Your cart has been cleared.",
           style: { background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--primary)' }
         });
@@ -117,7 +117,7 @@ function OrderHistoryContent() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       <Header />
-      
+
       <main className="max-w-6xl mx-auto px-4 py-32">
         <div className="mb-16 border-l-4 border-primary pl-6">
           <h1 className="text-5xl md:text-7xl font-black uppercase italic tracking-tighter leading-none">
@@ -128,9 +128,9 @@ function OrderHistoryContent() {
 
         {orders.length === 0 ? (
           <div className="py-32 text-center border-2 border-dashed border-border bg-muted/5">
-             <PackageOpen className="h-16 w-16 mx-auto mb-6 text-muted-foreground/30" />
-             <p className="text-muted-foreground italic uppercase font-black text-xs tracking-widest">No drops secured yet.</p>
-             <Button onClick={() => window.location.href='/products'} className="mt-8 bg-foreground text-background hover:bg-primary transition-all rounded-none px-10 py-6 font-black uppercase italic cursor-pointer shadow-lg">Explore Latest Drops</Button>
+            <PackageOpen className="h-16 w-16 mx-auto mb-6 text-muted-foreground/30" />
+            <p className="text-muted-foreground italic uppercase font-black text-xs tracking-widest">No drops secured yet.</p>
+            <Button onClick={() => window.location.href = '/products'} className="mt-8 bg-foreground text-background hover:bg-primary transition-all rounded-none px-10 py-6 font-black uppercase italic cursor-pointer shadow-lg">Explore Latest Drops</Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
@@ -138,22 +138,22 @@ function OrderHistoryContent() {
               <div key={index} className="bg-card border border-border p-8 flex flex-col md:flex-row justify-between items-center gap-8 shadow-sm hover:shadow-xl transition-all group">
                 <div className="flex items-center gap-8 w-full md:w-auto">
                   <div className="relative h-28 w-24 bg-muted border border-border overflow-hidden shrink-0">
-                    <Image src={item.image_url || "/products/tee-1.jpg"} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                    <Image src={item.image_url || "/products/404.png"} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
                   </div>
                   <div>
                     <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest italic mb-2">ID #ORD-{item.order_id}</p>
                     <h3 className="text-xl font-black uppercase italic text-foreground">{item.name}</h3>
                     <div className="flex items-center gap-3 mt-3">
-                       <div className={cn("h-2 w-2 rounded-full animate-pulse", item.status === 'Paid' ? "bg-primary" : "bg-orange-500")} />
-                       <span className="text-[10px] font-black uppercase tracking-widest italic text-primary">{item.status}</span>
-                       <span className="bg-foreground text-background text-[8px] font-black px-2 py-0.5 uppercase italic ml-2">Size {item.size || 'STD'}</span>
+                      <div className={cn("h-2 w-2 rounded-full animate-pulse", item.status === 'Paid' ? "bg-primary" : "bg-orange-500")} />
+                      <span className="text-[10px] font-black uppercase tracking-widest italic text-primary">{item.status}</span>
+                      <span className="bg-foreground text-background text-[8px] font-black px-2 py-0.5 uppercase italic ml-2">Size {item.size || 'STD'}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-12">
                   <p className="font-black text-3xl tracking-tighter text-foreground">${parseFloat(item.price).toFixed(2)}</p>
-                  
+
                   {item.review_id ? (
                     <div className="bg-muted px-8 py-5 flex items-center gap-3 border border-border">
                       <Check className="h-4 w-4 text-primary" />
@@ -161,8 +161,8 @@ function OrderHistoryContent() {
                     </div>
                   ) : (
                     (item.status === 'Paid' || item.status === 'Completed') ? (
-                      <Button 
-                        onClick={() => { setSelectedProduct(item); setShowReviewModal(true); }} 
+                      <Button
+                        onClick={() => { setSelectedProduct(item); setShowReviewModal(true); }}
                         className="bg-foreground text-background hover:bg-primary hover:text-primary-foreground transition-all rounded-none py-8 px-10 font-black uppercase italic text-xs cursor-pointer shadow-lg"
                       >
                         Rate Drop
@@ -185,21 +185,21 @@ function OrderHistoryContent() {
             <button onClick={handleCloseModal} className="absolute top-6 right-6 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"><X size={30} /></button>
             <h2 className="text-4xl font-black uppercase italic tracking-tighter text-center text-foreground">Post Feedback<span className="text-primary">.</span></h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div onClick={triggerFileInput} className="aspect-square w-full bg-muted/30 border border-dashed border-border flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-all group">
-                  {previewUrl ? <img src={previewUrl} className="h-full w-full object-cover" /> : <Upload className="text-muted-foreground group-hover:text-primary transition-colors" size={32} />}
+              <div onClick={triggerFileInput} className="aspect-square w-full bg-muted/30 border border-dashed border-border flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-all group">
+                {previewUrl ? <img src={previewUrl} className="h-full w-full object-cover" /> : <Upload className="text-muted-foreground group-hover:text-primary transition-colors" size={32} />}
+              </div>
+              <div className="space-y-6">
+                <div className="flex gap-2 text-primary">
+                  {[1, 2, 3, 4, 5].map(s => <Star key={s} size={24} className={cn("cursor-pointer hover:scale-110 transition-transform", s <= rating ? "fill-current" : "text-muted")} onClick={() => setRating(s)} />)}
                 </div>
-                <div className="space-y-6">
-                    <div className="flex gap-2 text-primary">
-                        {[1,2,3,4,5].map(s => <Star key={s} size={24} className={cn("cursor-pointer hover:scale-110 transition-transform", s <= rating ? "fill-current" : "text-muted")} onClick={() => setRating(s)} />)}
-                    </div>
-                    <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="DROP THOUGHTS..." className="w-full bg-muted/30 border p-4 text-xs italic h-40 outline-none focus:border-primary cursor-text text-foreground" />
-                </div>
+                <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="DROP THOUGHTS..." className="w-full bg-muted/30 border p-4 text-xs italic h-40 outline-none focus:border-primary cursor-text text-foreground" />
+              </div>
             </div>
             <div className="flex gap-4">
-                <Button onClick={handleCloseModal} variant="outline" className="flex-1 rounded-none py-8 cursor-pointer hover:bg-muted text-muted-foreground">Cancel</Button>
-                <Button disabled={isSubmitting} onClick={submitReview} className="flex-1 bg-foreground text-background hover:bg-primary py-8 rounded-none font-black italic cursor-pointer shadow-xl">
-                   {isSubmitting ? <Loader2 className="animate-spin" /> : "Publish Log"}
-                </Button>
+              <Button onClick={handleCloseModal} variant="outline" className="flex-1 rounded-none py-8 cursor-pointer hover:bg-muted text-muted-foreground">Cancel</Button>
+              <Button disabled={isSubmitting} onClick={submitReview} className="flex-1 bg-foreground text-background hover:bg-primary py-8 rounded-none font-black italic cursor-pointer shadow-xl">
+                {isSubmitting ? <Loader2 className="animate-spin" /> : "Publish Log"}
+              </Button>
             </div>
           </div>
         </div>

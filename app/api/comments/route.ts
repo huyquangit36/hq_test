@@ -6,7 +6,8 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get("productId");
 
-    const res = await query(`
+    const result = await query(
+      `
   SELECT 
     c.id, 
     c.content, 
@@ -18,7 +19,9 @@ export async function GET(req: Request) {
   INNER JOIN users u ON c.user_id = u.id 
   WHERE c.product_id = $1 
   ORDER BY c.created_at DESC
-`, [productId]);
+`,
+      [productId],
+    );
     return NextResponse.json(result.rows);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -30,7 +33,7 @@ export async function POST(req: Request) {
     const { user_id, product_id, content } = await req.json();
     const result = await query(
       "INSERT INTO comments (user_id, product_id, content) VALUES ($1, $2, $3) RETURNING *",
-      [user_id, product_id, content]
+      [user_id, product_id, content],
     );
     return NextResponse.json(result.rows[0], { status: 201 });
   } catch (error: any) {

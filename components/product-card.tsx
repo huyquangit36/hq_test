@@ -20,7 +20,7 @@ interface ProductCardProps {
   priority?: boolean;
 }
 
-export const ProductCard = memo(({ product, priority = false }: ProductCardProps) => { 
+export const ProductCard = memo(({ product, priority = false }: ProductCardProps) => {
   const isMOutOfStock = (product.size_stocks?.M || 0) <= 0;
 
   const addToCart = useCallback((e: React.MouseEvent) => {
@@ -70,7 +70,7 @@ export const ProductCard = memo(({ product, priority = false }: ProductCardProps
 
     localStorage.setItem("cart", JSON.stringify(currentCart));
     window.dispatchEvent(new Event("cart-updated"));
-  
+
     toast.success("ADDED TO BAG", {
       description: `${product.name.toUpperCase()} (M) LINKED.`,
       style: { borderRadius: 0, background: 'oklch(0.65 0.1 170)', color: 'white' }
@@ -78,11 +78,11 @@ export const ProductCard = memo(({ product, priority = false }: ProductCardProps
   }, [product]);
 
   return (
-    <div className="group relative bg-white border border-zinc-100 rounded-none overflow-hidden transition-none hover:border-[oklch(0.65_0.1_170)]">      
+    <div className="group relative bg-white border border-zinc-100 rounded-none overflow-hidden transition-none hover:border-[oklch(0.65_0.1_170)]">
       <Link href={`/products/${product.id}`} className="cursor-pointer">
         <div className="relative aspect-[3/4] overflow-hidden bg-[#fafafa]">
           <Image
-            src={product.image || "/products/tee-1.jpg"}
+            src={product.image || "/products/404.png"}
             alt={product.name}
             fill
             priority={priority}
@@ -92,21 +92,21 @@ export const ProductCard = memo(({ product, priority = false }: ProductCardProps
               isMOutOfStock && "grayscale opacity-30"
             )}
           />
-          
+
           <div className="absolute inset-0 bg-[oklch(0.22_0.06_240)]/10 opacity-0 group-hover:opacity-100 transition-none flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]">
-            <Button 
+            <Button
               onClick={addToCart}
               disabled={isMOutOfStock}
               className={cn(
                 "w-36 rounded-none font-black uppercase italic text-[9px] py-6 transition-none cursor-pointer",
-                isMOutOfStock 
-                ? "bg-zinc-200 text-zinc-400 cursor-not-allowed border-none" 
-                : "bg-[oklch(0.22_0.06_240)] text-white hover:bg-[oklch(0.65_0.1_170)] shadow-none"
+                isMOutOfStock
+                  ? "bg-zinc-200 text-zinc-400 cursor-not-allowed border-none"
+                  : "bg-[oklch(0.22_0.06_240)] text-white hover:bg-[oklch(0.65_0.1_170)] shadow-none"
               )}
             >
               {isMOutOfStock ? "ARCHIVE EMPTY" : "QUICK ADD (M)"}
             </Button>
-            
+
             <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-[oklch(0.22_0.06_240)] bg-white/90 px-3 py-1.5 border border-zinc-100">
               <Eye className="h-3 w-3" /> VIEW ARCHIVE
             </div>

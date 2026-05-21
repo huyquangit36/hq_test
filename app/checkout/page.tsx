@@ -105,9 +105,22 @@ export default function CheckoutPage() {
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Order creation failed.");
 
-      if (!response.ok) {
-        throw new Error(data.error || "Order creation failed.");
+      const profileUpdate = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId,
+          address: address,
+          full_name: user.full_name, // Giữ nguyên các thông tin cũ
+          phone: user.phone
+        }),
+      });
+
+      if (profileUpdate.ok) {
+        const updatedUser = await profileUpdate.json();
+        localStorage.setItem("user", JSON.stringify({ ...user, address: address }));
       }
 
       const finalOrderId = data.orderId;
@@ -131,8 +144,7 @@ export default function CheckoutPage() {
       localStorage.removeItem("cart");
       window.dispatchEvent(new Event("cart-updated"));
 
-      toast.success("ORDER SECURED", { description: "Your drop has been recorded." });
-
+      toast.success("ORDER SECURED", { description: "Your drop has been recorded and address saved." });
       router.push("/orders/history");
 
     } catch (error: any) {
@@ -241,7 +253,7 @@ export default function CheckoutPage() {
                         <div key={index} className="flex justify-between items-start gap-5 text-background">
                           <div className="flex gap-5">
                             <div className="h-20 w-20 bg-background/10 flex-shrink-0 border border-background/10 overflow-hidden">
-                              <img src={item.image || "/products/tee-1.jpg"} className="object-cover h-full w-full opacity-90" alt="Product" />
+                              <img src={item.image || "/products/404.png"} className="object-cover h-full w-full opacity-90" alt="Product" />
                             </div>
                             <div className="space-y-2">
                               <p className="font-black uppercase text-[13px] italic leading-tight tracking-tighter">{item.name}</p>

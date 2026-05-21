@@ -10,7 +10,7 @@ const poolConfig = {
 };
 
 if (process.env.NODE_ENV === 'production') {
-  pool = new Pool(poolConfig);
+  pool = new Pool(poolConfig);  
 } else {
   if (!(global as any).pool) {
     (global as any).pool = new Pool(poolConfig);

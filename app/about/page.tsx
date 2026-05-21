@@ -13,7 +13,7 @@ export default function AboutPage() {
 
       <main className="pt-24 md:pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-          
+
           {/* 01. HERO SECTION: NEURAL ESTABLISHMENT */}
           <section className="mb-20 md:mb-40">
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12 md:mb-20">
@@ -33,8 +33,8 @@ export default function AboutPage() {
               </div>
               <div className="max-w-md border-l-4 border-[oklch(0.22_0.06_240)] pl-6 py-2">
                 <p className="text-sm md:text-base font-medium leading-relaxed italic text-zinc-500">
-                  HQ Streetwear is not a brand. It is an archive of urban evolution. 
-                  We bridge the gap between high-fashion couture and raw street culture, 
+                  HQ Streetwear is not a brand. It is an archive of urban evolution.
+                  We bridge the gap between high-fashion couture and raw street culture,
                   defining a new era of high-end minimalism.
                 </p>
               </div>
@@ -42,8 +42,8 @@ export default function AboutPage() {
 
             {/* FULL WIDTH HERO IMAGE WITH TECHNICAL OVERLAY */}
             <div className="relative aspect-[16/7] w-full overflow-hidden grayscale hover:grayscale-0 transition-none duration-1000 group cursor-crosshair">
-              <img 
-                src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=1974" 
+              <img
+                src="/images/hero-bg.png"
                 className="w-full h-full object-cover group-hover:scale-105 transition-none duration-1000"
                 alt="HQ Archive Hero"
               />
@@ -51,8 +51,8 @@ export default function AboutPage() {
                 Scan Protocol // Active
               </div>
               <div className="absolute bottom-6 left-6 flex items-center gap-4 text-white">
-                 <div className="h-px w-20 bg-white hidden md:block" />
-                 <span className="text-[10px] font-black uppercase tracking-widest italic">Core Collection 01.</span>
+                <div className="h-px w-20 bg-white hidden md:block" />
+                <span className="text-[10px] font-black uppercase tracking-widest italic">Core Collection 01.</span>
               </div>
             </div>
           </section>
@@ -65,8 +65,8 @@ export default function AboutPage() {
                   Refining<br />The Noise.
                 </h2>
                 <p className="max-w-lg text-sm md:text-base leading-loose font-medium italic text-zinc-400">
-                  Our design language is silent but aggressive. We strip away the unnecessary 
-                  to reveal the raw essence of craftsmanship. Every garment is treated 
+                  Our design language is silent but aggressive. We strip away the unnecessary
+                  to reveal the raw essence of craftsmanship. Every garment is treated
                   as a technical specification, built for the modern nomad.
                 </p>
               </div>
@@ -83,8 +83,8 @@ export default function AboutPage() {
             </div>
             <div className="lg:col-span-5 bg-white p-2">
               <div className="relative h-full w-full overflow-hidden group cursor-pointer">
-                 <img 
-                  src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=2070" 
+                <img
+                  src="/images/brand-story.png"
                   className="w-full h-full object-cover grayscale transition-none group-hover:scale-110"
                   alt="Process"
                 />
@@ -95,22 +95,22 @@ export default function AboutPage() {
 
           {/* 03. CORE PROTOCOLS (VALUES) */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-200 border border-zinc-200">
-            <ValueCard 
+            <ValueCard
               icon={<Zap className="h-5 w-5" />}
               title="High Velocity"
               desc="Archive design to global uplink within 48 hours. No delays."
             />
-            <ValueCard 
+            <ValueCard
               icon={<ShieldCheck className="h-5 w-5" />}
               title="Secure Link"
               desc="HMAC-SHA512 protocol protecting every archive transaction."
             />
-            <ValueCard 
+            <ValueCard
               icon={<Globe className="h-5 w-5" />}
               title="Urban Node"
               desc="Connected archives across Tokyo, London, and New York."
             />
-            <ValueCard 
+            <ValueCard
               icon={<HardHat className="h-5 w-5" />}
               title="Finishing"
               desc="Hand-finished technical details on every archive piece."
@@ -118,26 +118,26 @@ export default function AboutPage() {
           </section>
 
           {/* 04. FOOTER CALL TO ACTION */}
-<section className="mt-32 mb-20 text-center">
-  <h3 className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter mb-8">
-    Ready to join the Pack?
-  </h3>
-  
-  {/* KẾT NỐI SANG TRANG CONTACT */}
-  <Link href="/contact">
-    <button className="group relative px-12 py-6 bg-[oklch(0.22_0.06_240)] text-white text-[10px] font-black uppercase italic tracking-[0.5em] hover:bg-[oklch(0.65_0.1_170)] transition-none cursor-pointer rounded-none inline-flex items-center gap-4 overflow-hidden">
-      <span className="relative z-10">Initialize Subscription</span>
-      <ArrowDownRight className="h-4 w-4 relative z-10 transition-none group-hover:rotate-[-45deg]" />
-      
-      {/* Hiệu ứng quét khi hover (tùy chọn để tăng độ "high-end") */}
-      <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-none duration-500" />
-    </button>
-  </Link>
-  
-  <p className="mt-6 text-[9px] font-bold uppercase tracking-widest text-zinc-400 italic">
-    Average response time: &lt; 24H // Secure Line
-  </p>
-</section>
+          <section className="mt-32 mb-20 text-center">
+            <h3 className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter mb-8">
+              Ready to join the Pack?
+            </h3>
+
+            {/* KẾT NỐI SANG TRANG CONTACT */}
+            <Link href="/contact">
+              <button className="group relative px-12 py-6 bg-[oklch(0.22_0.06_240)] text-white text-[10px] font-black uppercase italic tracking-[0.5em] hover:bg-[oklch(0.65_0.1_170)] transition-none cursor-pointer rounded-none inline-flex items-center gap-4 overflow-hidden">
+                <span className="relative z-10">Initialize Subscription</span>
+                <ArrowDownRight className="h-4 w-4 relative z-10 transition-none group-hover:rotate-[-45deg]" />
+
+                {/* Hiệu ứng quét khi hover (tùy chọn để tăng độ "high-end") */}
+                <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-none duration-500" />
+              </button>
+            </Link>
+
+            <p className="mt-6 text-[9px] font-bold uppercase tracking-widest text-zinc-400 italic">
+              Average response time: &lt; 24H // Secure Line
+            </p>
+          </section>
 
         </div>
       </main>

@@ -135,13 +135,20 @@ export const Header = memo(() => {
                     <div className="space-y-6">
                       <p className="text-[10px] font-black text-[oklch(0.65_0.1_170)] uppercase italic tracking-[0.3em]">Neural Categories</p>
                       <ul className="space-y-4">
-                        {['Shop All', 'T-Shirts', 'Hoodies', 'Pants', 'Accessories'].map(cat => (
-                          <li key={cat}>
+                        {[
+                          { label: 'Shop All', slug: '' },
+                          { label: 'T-Shirts', slug: 'tshirts' },
+                          { label: 'Hoodies', slug: 'hoodies' },
+                          { label: 'Pants', slug: 'pants' },
+                          { label: 'Accessories', slug: 'accessories' }
+                        ].map(cat => (
+                          <li key={cat.label}>
                             <LinkNext
-                              href={`/products${cat !== 'Shop All' ? `?category=${cat.toLowerCase().replace(' ', '')}` : ''}`}
-                              className="text-xs font-black uppercase italic text-zinc-400 hover:text-black transition-none block translate-x-0 hover:translate-x-2"
+                              href={`/products${cat.slug ? `?category=${cat.slug}` : ''}`}
+                              onClick={() => setIsHoveringProduct(false)}
+                              className="text-xs font-black uppercase italic text-zinc-400 hover:text-primary transition-all block translate-x-0 hover:translate-x-2 cursor-pointer"
                             >
-                              {cat}
+                              {cat.label}
                             </LinkNext>
                           </li>
                         ))}
@@ -149,7 +156,7 @@ export const Header = memo(() => {
                     </div>
                     <div className="relative group overflow-hidden bg-zinc-50 border border-zinc-100 rounded-none aspect-video">
                       <img
-                        src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=500&q=80"
+                        src="/images/hero-bg.png"
                         className="absolute inset-0 w-full h-full object-cover grayscale opacity-80 transition-none group-hover:scale-105 group-hover:opacity-100"
                         alt="Featured"
                       />

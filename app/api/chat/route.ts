@@ -6,16 +6,22 @@ let lastFetch = 0;
 
 async function getInventory() {
   const now = Date.now();
-  if (cachedInventory && (now - lastFetch < 600000)) return cachedInventory;
-  
+  if (cachedInventory && now - lastFetch < 600000) return cachedInventory;
+
   try {
-    const res = await query(`SELECT id, name, price, description FROM products LIMIT 10`);
-    cachedInventory = res.rows.map(p => 
-      `- ${p.name}: $${p.price} ([Secure Drop](/products/${p.id})). Context: ${p.description}`
-    ).join("\n");
+    const res = await query(
+      `SELECT id, name, price, description FROM products LIMIT 10`,
+    );
+    cachedInventory = res.rows
+      .map(
+        (p) =>
+          `- ${p.name}: $${p.price} ([Secure Drop](/products/${p.id})). Context: ${p.description}`,
+      )
+      .join("\n");
     lastFetch = now;
   } catch (e) {
-    if (!cachedInventory) cachedInventory = "New hoodies and tees just dropped.";
+    if (!cachedInventory)
+      cachedInventory = "New hoodies and tees just dropped.";
   }
   return cachedInventory;
 }
@@ -28,7 +34,7 @@ export async function POST(req: Request) {
 
     const contents = messages.slice(-6).map((m: any) => ({
       role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }]
+      parts: [{ text: m.content }],
     }));
     if (contents.length > 0 && contents[0].role === "model") contents.shift();
 
@@ -44,19 +50,25 @@ export async function POST(req: Request) {
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
     const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents,
         system_instruction: { parts: [{ text: systemPrompt }] },
-        generationConfig: { temperature: 0.7, maxOutputTokens: 350 }
-      })
+        generationConfig: { temperature: 0.7, maxOutputTokens: 350 },
+      }),
     });
 
     const data = await response.json();
-    if (!response.ok) return NextResponse.json({ error: "AI_BUSY" }, { status: response.status });
+    if (!response.ok)
+      return NextResponse.json(
+        { error: "AI_BUSY" },
+        { status: response.status },
+      );
 
-    return NextResponse.json({ content: data.candidates[0].content.parts[0].text });
+    return NextResponse.json({
+      content: data.candidates[0].content.parts[0].text,
+    });
   } catch (error) {
     return NextResponse.json({ error: "SERVER_OFFLINE" }, { status: 500 });
   }

@@ -15,7 +15,7 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
-  const [filterStock, setFilterStock] = useState("all"); 
+  const [filterStock, setFilterStock] = useState("all");
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -25,8 +25,8 @@ export default function AdminProductsPage() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false); 
-  
+  const [mounted, setMounted] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "", price: "", category: "", description: "",
     size_stocks: { S: 0, M: 0, L: 0, XL: 0 }, color: "", image_url: ""
@@ -43,12 +43,12 @@ export default function AdminProductsPage() {
       if (Array.isArray(prods)) setProducts(prods);
       if (Array.isArray(cats)) {
         setCategories(cats);
-        if (!editingId && cats.length > 0) setFormData(prev => ({...prev, category: cats[0].name}));
+        if (!editingId && cats.length > 0) setFormData(prev => ({ ...prev, category: cats[0].name }));
       }
-    } catch (error) { 
+    } catch (error) {
       toast.error("DATA LINK FAILURE");
-    } finally { 
-      setLoading(false); 
+    } finally {
+      setLoading(false);
     }
   }, [editingId]);
 
@@ -104,7 +104,7 @@ export default function AdminProductsPage() {
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  
+
   const currentProducts = useMemo(() => {
     return filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
   }, [filteredProducts, indexOfFirstItem, indexOfLastItem]);
@@ -157,14 +157,14 @@ export default function AdminProductsPage() {
   return (
     <>
       <div className="w-full max-w-[1400px] mx-auto space-y-10 py-6 px-4 animate-in fade-in duration-1000">
-        
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b-2 border-border pb-10">
           <div className="space-y-1">
             <h1 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter text-foreground leading-none">Inventory<span className="text-primary">.</span></h1>
             <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.4em] italic">Archive Protocol</p>
           </div>
           <Button onClick={() => setShowModal(true)} className="bg-foreground text-background hover:bg-primary h-14 md:h-16 px-10 rounded-none font-black uppercase italic cursor-pointer shadow-xl w-full md:w-auto transition-all">
-             New Drop +
+            New Drop +
           </Button>
         </div>
 
@@ -198,13 +198,13 @@ export default function AdminProductsPage() {
               </thead>
               <tbody className="animate-in fade-in duration-500">
                 {currentProducts.map(p => {
-                  const ss = p.size_stocks || {S:0, M:0, L:0, XL:0};
+                  const ss = p.size_stocks || { S: 0, M: 0, L: 0, XL: 0 };
                   const total = getTotalStock(ss);
                   return (
                     <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/10 transition-colors group">
                       <td className="p-6 flex items-center gap-5">
                         <div className="relative h-14 w-12 bg-muted border border-border shrink-0 overflow-hidden">
-                          <Image src={p.image_url || "/products/tee-1.jpg"} alt={p.name} fill className="object-cover" />
+                          <Image src={p.image_url || "/products/404.png"} alt={p.name} fill className="object-cover" />
                         </div>
                         <span className="text-sm font-black text-foreground uppercase italic tracking-tighter">{p.name}</span>
                       </td>
@@ -212,11 +212,11 @@ export default function AdminProductsPage() {
                       <td className="p-6 text-sm font-black text-primary italic">${parseFloat(p.price).toFixed(2)}</td>
                       <td className="p-6">
                         <div className="flex gap-4">
-                          {['S','M','L','XL'].map(size => (
-                             <div key={size} className="text-center min-w-[30px]">
-                                <p className="text-[7px] font-black text-muted-foreground">{size}</p>
-                                <p className={cn("text-[11px] font-mono font-bold", ss[size] === 0 ? "text-destructive" : "text-foreground")}>{ss[size]}</p>
-                             </div>
+                          {['S', 'M', 'L', 'XL'].map(size => (
+                            <div key={size} className="text-center min-w-[30px]">
+                              <p className="text-[7px] font-black text-muted-foreground">{size}</p>
+                              <p className={cn("text-[11px] font-mono font-bold", ss[size] === 0 ? "text-destructive" : "text-foreground")}>{ss[size]}</p>
+                            </div>
                           ))}
                           <div className={cn("ml-4 px-3 py-1 text-[9px] font-black italic flex items-center", total < 10 ? "bg-destructive text-white" : "bg-foreground text-background")}>TOTAL: {total}</div>
                         </div>
@@ -224,7 +224,7 @@ export default function AdminProductsPage() {
                       <td className="p-6 text-right">
                         <div className="flex justify-end gap-3">
                           <button onClick={() => handleEdit(p)} className="p-2 hover:text-primary transition-colors cursor-pointer"><Pencil size={18} /></button>
-                          <button onClick={() => {if(confirm("Delete?")) fetch(`/api/admin/products?id=${p.id}`, {method:'DELETE'}).then(()=>fetchData())}} className="p-2 hover:text-destructive transition-colors cursor-pointer"><Trash2 size={18} /></button>
+                          <button onClick={() => { if (confirm("Delete?")) fetch(`/api/admin/products?id=${p.id}`, { method: 'DELETE' }).then(() => fetchData()) }} className="p-2 hover:text-destructive transition-colors cursor-pointer"><Trash2 size={18} /></button>
                         </div>
                       </td>
                     </tr>
@@ -240,22 +240,22 @@ export default function AdminProductsPage() {
                 Showing {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredProducts.length)} of {filteredProducts.length} drops
               </p>
               <div className="flex gap-2">
-                <button 
+                <button
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(prev => prev - 1)}
                   className="h-10 w-10 border border-border flex items-center justify-center hover:bg-muted disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   <ChevronLeft size={16} />
                 </button>
-                
+
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
                     className={cn(
                       "h-10 w-10 font-black italic text-xs transition-all border cursor-pointer",
-                      currentPage === page 
-                        ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" 
+                      currentPage === page
+                        ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20"
                         : "border-border text-muted-foreground hover:border-primary hover:text-primary"
                     )}
                   >
@@ -263,7 +263,7 @@ export default function AdminProductsPage() {
                   </button>
                 ))}
 
-                <button 
+                <button
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(prev => prev + 1)}
                   className="h-10 w-10 border border-border flex items-center justify-center hover:bg-muted disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer"
@@ -276,7 +276,7 @@ export default function AdminProductsPage() {
 
           {filteredProducts.length === 0 && (
             <div className="p-24 text-center">
-               <p className="text-muted-foreground uppercase italic font-black text-xs tracking-[0.5em]">No matching transmissions found.</p>
+              <p className="text-muted-foreground uppercase italic font-black text-xs tracking-[0.5em]">No matching transmissions found.</p>
             </div>
           )}
         </div>
@@ -287,16 +287,16 @@ export default function AdminProductsPage() {
           <div className="bg-background border-2 border-foreground w-full max-w-4xl shadow-2xl relative my-4 md:my-10 animate-in zoom-in-95 duration-200 mx-2 md:mx-0" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 md:p-12 space-y-12">
               <div className="flex justify-between items-start border-b-2 border-border pb-8">
-                 <div className="space-y-1">
-                    <div className="flex items-center gap-3 text-primary mb-2">
-                       <Database size={16} />
-                       <span className="text-[8px] font-black uppercase tracking-[0.4em]">Internal Registry Protocol</span>
-                    </div>
-                    <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter leading-none text-foreground">
-                      {editingId ? 'Edit Product.' : 'New Drop.'}
-                    </h2>
-                 </div>
-                 <button onClick={handleCloseModal} className="h-10 w-10 border-2 border-foreground flex items-center justify-center hover:bg-destructive hover:text-white transition-all cursor-pointer"><X size={20} /></button>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3 text-primary mb-2">
+                    <Database size={16} />
+                    <span className="text-[8px] font-black uppercase tracking-[0.4em]">Internal Registry Protocol</span>
+                  </div>
+                  <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter leading-none text-foreground">
+                    {editingId ? 'Edit Product.' : 'New Drop.'}
+                  </h2>
+                </div>
+                <button onClick={handleCloseModal} className="h-10 w-10 border-2 border-foreground flex items-center justify-center hover:bg-destructive hover:text-white transition-all cursor-pointer"><X size={20} /></button>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -306,64 +306,64 @@ export default function AdminProductsPage() {
                     <div onClick={() => document.getElementById('file-in')?.click()} className="aspect-video w-full bg-muted/20 border-2 border-dashed border-border flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-all group">
                       {previewUrl ? <img src={previewUrl} className="h-full w-full object-cover" alt="Preview" /> : (
                         <div className="text-center space-y-2">
-                           <Upload className="h-8 w-8 text-muted-foreground mx-auto group-hover:text-primary transition-colors" />
-                           <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Select Image Asset</p>
+                          <Upload className="h-8 w-8 text-muted-foreground mx-auto group-hover:text-primary transition-colors" />
+                          <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Select Image Asset</p>
                         </div>
                       )}
                     </div>
-                    <input id="file-in" type="file" onChange={(e) => {const f=e.target.files?.[0]; if(f){setSelectedFile(f); setPreviewUrl(URL.createObjectURL(f))}}} className="hidden" />
+                    <input id="file-in" type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSelectedFile(f); setPreviewUrl(URL.createObjectURL(f)) } }} className="hidden" />
                   </div>
 
                   <div className="space-y-4">
-                     <label className="text-[10px] font-black uppercase italic border-l-4 border-primary pl-3">Stock Allotment</label>
-                     <div className="grid grid-cols-4 gap-2 bg-muted/5 p-4 border border-border">
-                        {['S', 'M', 'L', 'XL'].map((size) => (
-                          <div key={size} className="space-y-1">
-                            <p className="text-[9px] font-black text-center text-muted-foreground">{size}</p>
-                            <input 
-                              type="number" min="0" 
-                              className="w-full bg-background border border-border p-3 text-center text-xs font-bold focus:border-primary outline-none" 
-                              value={formData.size_stocks[size as keyof typeof formData.size_stocks]} 
-                              onChange={(e) => setFormData({...formData, size_stocks: {...formData.size_stocks, [size]: parseInt(e.target.value)||0}})} 
-                            />
-                          </div>
-                        ))}
-                     </div>
+                    <label className="text-[10px] font-black uppercase italic border-l-4 border-primary pl-3">Stock Allotment</label>
+                    <div className="grid grid-cols-4 gap-2 bg-muted/5 p-4 border border-border">
+                      {['S', 'M', 'L', 'XL'].map((size) => (
+                        <div key={size} className="space-y-1">
+                          <p className="text-[9px] font-black text-center text-muted-foreground">{size}</p>
+                          <input
+                            type="number" min="0"
+                            className="w-full bg-background border border-border p-3 text-center text-xs font-bold focus:border-primary outline-none"
+                            value={formData.size_stocks[size as keyof typeof formData.size_stocks]}
+                            onChange={(e) => setFormData({ ...formData, size_stocks: { ...formData.size_stocks, [size]: parseInt(e.target.value) || 0 } })}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-8">
                   <div className="space-y-6">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase text-muted-foreground italic">Name</label>
-                       <input className="w-full bg-muted/10 border border-border p-4 text-xs font-bold uppercase italic outline-none focus:border-primary" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+                      <label className="text-[10px] font-black uppercase text-muted-foreground italic">Name</label>
+                      <input className="w-full bg-muted/10 border border-border p-4 text-xs font-bold uppercase italic outline-none focus:border-primary" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase text-muted-foreground italic">Retail ($)</label>
-                        <input type="number" step="0.01" className="w-full bg-muted/10 border border-border p-4 text-xs font-bold outline-none focus:border-primary" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} required />
+                        <input type="number" step="0.01" className="w-full bg-muted/10 border border-border p-4 text-xs font-bold outline-none focus:border-primary" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} required />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase text-muted-foreground italic">Colorway</label>
-                        <input className="w-full bg-muted/10 border border-border p-4 text-xs font-bold outline-none focus:border-primary" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} />
+                        <input className="w-full bg-muted/10 border border-border p-4 text-xs font-bold outline-none focus:border-primary" value={formData.color} onChange={e => setFormData({ ...formData, color: e.target.value })} />
                       </div>
                     </div>
 
                     <div className="space-y-4 pt-6 border-t border-border">
-                       <label className="text-[10px] font-black uppercase italic text-foreground flex items-center gap-2"><Tag size={12} className="text-primary"/> Category Node</label>
-                       <select className="w-full bg-muted/10 border border-border p-4 text-[10px] font-black uppercase italic outline-none focus:border-primary cursor-pointer mb-2" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                          {categories.map(c => <option key={c.id} value={c.name}>{c.name.toUpperCase()}</option>)}
-                       </select>
-                       <div className="flex flex-col sm:flex-row gap-2">
-                          <input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="NEW TAG..." className="flex-1 bg-background border border-border px-4 text-[10px] font-black uppercase outline-none focus:border-primary" />
-                          <button type="button" onClick={handleAddCategory} className="bg-primary text-primary-foreground px-6 py-4 text-[9px] font-black uppercase italic cursor-pointer hover:bg-foreground transition-all">Add Tag</button>
-                       </div>
+                      <label className="text-[10px] font-black uppercase italic text-foreground flex items-center gap-2"><Tag size={12} className="text-primary" /> Category Node</label>
+                      <select className="w-full bg-muted/10 border border-border p-4 text-[10px] font-black uppercase italic outline-none focus:border-primary cursor-pointer mb-2" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                        {categories.map(c => <option key={c.id} value={c.name}>{c.name.toUpperCase()}</option>)}
+                      </select>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="NEW TAG..." className="flex-1 bg-background border border-border px-4 text-[10px] font-black uppercase outline-none focus:border-primary" />
+                        <button type="button" onClick={handleAddCategory} className="bg-primary text-primary-foreground px-6 py-4 text-[9px] font-black uppercase italic cursor-pointer hover:bg-foreground transition-all">Add Tag</button>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase text-muted-foreground italic">Context</label>
-                       <textarea className="w-full bg-muted/10 border border-border p-4 text-xs font-medium h-32 focus:border-primary outline-none resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                      <label className="text-[10px] font-black uppercase text-muted-foreground italic">Context</label>
+                      <textarea className="w-full bg-muted/10 border border-border p-4 text-xs font-medium h-32 focus:border-primary outline-none resize-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                     </div>
                   </div>
                 </div>
@@ -376,7 +376,7 @@ export default function AdminProductsPage() {
             </div>
           </div>
         </div>,
-        document.body 
+        document.body
       )}
     </>
   );

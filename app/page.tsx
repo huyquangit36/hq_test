@@ -6,8 +6,8 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ProductCard } from "@/components/product-card";
 import { ChatButton } from "@/components/chat-button";
-import { NewsletterSection } from "@/components/newsletter-section"; 
-import { query } from "@/lib/db"; 
+import { NewsletterSection } from "@/components/newsletter-section";
+import { query } from "@/lib/db";
 import { unstable_cache } from "next/cache";
 
 const getFeaturedProducts = unstable_cache(
@@ -35,11 +35,11 @@ export default async function LandingPage() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 bg-muted/30">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background z-10" />
-          <Image 
-            src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=1974" 
+          <Image
+            src="/images/hero-bg.png"
             alt="Hero Background"
             fill
-            priority 
+            priority
             className="object-cover opacity-40 grayscale transition-none"
           />
         </div>
@@ -48,15 +48,15 @@ export default async function LandingPage() {
           <div className="inline-block mb-6 px-4 py-1 border border-primary bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.5em] italic animate-pulse">
             New Era Collection 2026
           </div>
-          
+
           <h1 className="text-5xl md:text-9xl font-black tracking-tighter uppercase italic leading-[0.9] md:leading-[0.85] text-foreground">
             RAW<span className="text-primary">.</span> UNTAMED<br />STREETWEAR
           </h1>
-          
+
           <p className="mt-8 text-muted-foreground text-[10px] md:text-sm uppercase tracking-[0.3em] font-bold max-w-xl mx-auto italic px-4">
             Defining the urban culture through high-end minimalist aesthetics.
           </p>
-          
+
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6 px-6">
             <Link href="/products" className="w-full sm:w-auto">
               <Button size="lg" className="w-full bg-foreground text-background hover:bg-primary hover:text-white px-12 py-8 text-xs font-black uppercase italic rounded-none transition-none shadow-xl">
@@ -96,17 +96,17 @@ export default async function LandingPage() {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-{products.map((product: any, index: number) => (
-  <ProductCard 
-    key={product.id} 
-    priority={index < 4}
-    product={{
-      ...product,
-      price: parseFloat(product.price),
-      image: product.image_url
-    }} 
-  />
-))}
+            {products.map((product: any, index: number) => (
+              <ProductCard
+                key={product.id}
+                priority={index < 4}
+                product={{
+                  ...product,
+                  price: parseFloat(product.price),
+                  image: product.image_url
+                }}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -128,8 +128,8 @@ export default async function LandingPage() {
               </div>
             </div>
             <div className="relative aspect-square md:aspect-[4/5] bg-muted/10 order-1 lg:order-2">
-              <Image 
-                src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=2070" 
+              <Image
+                src="/images/brand-story.png"
                 alt="Brand Story"
                 fill
                 className="object-cover grayscale brightness-110"
@@ -149,20 +149,21 @@ export default async function LandingPage() {
             <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-foreground">Lookbook Portfolio.</h2>
             <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mt-4 italic">Street Style Photography // Winter 2026</p>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {[
-              "https://images.unsplash.com/photo-1523381210434-271e8be1f52b",
-              "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f",
-              "https://images.unsplash.com/photo-1509631179647-0177331693ae",
-              "https://images.unsplash.com/photo-1492288991661-058aa541ff43"
+              "/images/portfolio-1.png",
+              "/images/portfolio-2.png",
+              "/images/portfolio-3.png",
+              "/images/portfolio-4.png"
             ].map((img, i) => (
               <div key={i} className="aspect-[3/4] relative overflow-hidden bg-muted group border border-border">
-                <Image 
-                  src={`${img}?q=80&w=800&auto=format&fit=crop`} 
+                <Image
+                  src={img}
                   alt={`Portfolio ${i}`}
                   fill
-                  className="object-cover grayscale group-hover:grayscale-0 transition-none group-hover:scale-105" 
+                  sizes="(max-w-768px) 50vw, 25vw"
+                  className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
                 />
               </div>
             ))}

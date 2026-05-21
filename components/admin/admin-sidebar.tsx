@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, Package, ShoppingCart, Users, 
-  BarChart3, MessageSquare, Newspaper, LogOut, ArrowLeft 
+import {
+  LayoutDashboard, Package, ShoppingCart, Users,
+  BarChart3, MessageSquare, Newspaper, LogOut, ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,23 +32,23 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
       "fixed inset-y-0 left-0 lg:relative",
       isOpen ? "w-[280px] translate-x-0" : "w-0 -translate-x-full lg:w-20 lg:translate-x-0",
     )}>
-      
+
       {/* Logo Section */}
       <div className={cn(
         "h-20 flex items-center border-b border-zinc-50 shrink-0 px-6",
         !isOpen && "lg:justify-center lg:px-0"
       )}>
-         <Link href="/admin" className="flex items-center gap-3">
-           <div className="h-8 w-8 bg-[oklch(0.22_0.06_240)] flex items-center justify-center shrink-0">
-              <span className="text-white font-black italic text-xs">HQ</span>
-           </div>
-           {/* DÙNG HIDDEN KHI ĐÓNG */}
-           {isOpen && (
-             <span className="text-xl font-black uppercase italic tracking-tighter text-[oklch(0.22_0.06_240)] animate-in fade-in duration-300">
-                Admin<span className="text-[oklch(0.65_0.1_170)]">.</span>
-             </span>
-           )}
-         </Link>
+        <Link href="/admin" className="flex items-center gap-3">
+          <div className="h-8 w-8 bg-[oklch(0.22_0.06_240)] flex items-center justify-center shrink-0">
+            <span className="text-white font-black italic text-xs">HQ</span>
+          </div>
+          {/* DÙNG HIDDEN KHI ĐÓNG */}
+          {isOpen && (
+            <span className="text-xl font-black uppercase italic tracking-tighter text-[oklch(0.22_0.06_240)] animate-in fade-in duration-300">
+              Admin<span className="text-[oklch(0.65_0.1_170)]">.</span>
+            </span>
+          )}
+        </Link>
       </div>
 
       {/* Navigation */}
@@ -56,8 +56,8 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link 
-              key={item.name} 
+            <Link
+              key={item.name}
               href={item.href}
               onClick={onClose}
               className={cn(
@@ -67,13 +67,13 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
               )}
             >
               {isActive && <div className="absolute left-0 w-1 h-6 bg-[oklch(0.65_0.1_170)]" />}
-              
+
               <item.icon className={cn("h-4 w-4 shrink-0", isActive && "text-[oklch(0.65_0.1_170)]")} />
-              
+
               {/* DÙNG HIDDEN KHI ĐÓNG ĐỂ ICON KHÔNG BỊ LỆCH MARGIN */}
               {isOpen && (
                 <span className="text-[10px] font-black uppercase italic tracking-[0.2em] ml-4 whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-                  {item.label || item.name}
+                  {item.name}
                 </span>
               )}
             </Link>
@@ -83,13 +83,13 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Footer */}
       <div className="mt-auto p-4 border-t border-zinc-50 bg-zinc-50/30">
-         <Link href="/" className={cn(
-           "flex items-center py-3 px-4 transition-none cursor-pointer text-zinc-400 hover:text-black",
-           !isOpen && "lg:justify-center lg:px-0"
-         )}>
-            <ArrowLeft size={16} />
-            {isOpen && <span className="text-[10px] font-black uppercase italic tracking-widest ml-4 animate-in fade-in duration-300">Live Shop</span>}
-         </Link>
+        <Link href="/" className={cn(
+          "flex items-center py-3 px-4 transition-none cursor-pointer text-zinc-400 hover:text-black",
+          !isOpen && "lg:justify-center lg:px-0"
+        )}>
+          <ArrowLeft size={16} />
+          {isOpen && <span className="text-[10px] font-black uppercase italic tracking-widest ml-4 animate-in fade-in duration-300">Live Shop</span>}
+        </Link>
       </div>
     </aside>
   );
